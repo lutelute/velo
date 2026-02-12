@@ -7,7 +7,7 @@ import { useUIStore } from "@/stores/uiStore";
 import { useComposerStore } from "@/stores/composerStore";
 import { useLabelStore } from "@/stores/labelStore";
 import { getGmailClient } from "@/services/gmail/tokenManager";
-import { deleteThread as deleteThreadFromDb, pinThread as pinThreadDb, unpinThread as unpinThreadDb } from "@/services/db/threads";
+import { deleteThread as deleteThreadFromDb, pinThread as pinThreadDb, unpinThread as unpinThreadDb, muteThread as muteThreadDb, unmuteThread as unmuteThreadDb } from "@/services/db/threads";
 import { deleteDraftsForThread } from "@/services/gmail/draftDeletion";
 import { getMessagesForThread } from "@/services/db/messages";
 import { snoozeThread } from "@/services/snooze/snoozeManager";
@@ -29,6 +29,7 @@ import {
   Pencil,
   Copy,
   Layers,
+  VolumeX,
 } from "lucide-react";
 import { setThreadCategory, ALL_CATEGORIES } from "@/services/db/threadCategories";
 
@@ -172,6 +173,7 @@ function ThreadMenu({
   const isRead = isMulti ? true : thread.isRead;
   const isStarred = isMulti ? false : thread.isStarred;
   const isPinned = isMulti ? false : thread.isPinned;
+  const isMuted = isMulti ? false : thread.isMuted;
 
   const handleReply = async () => {
     const messages = await getMessagesForThread(activeAccountId, thread.id);
@@ -313,6 +315,23 @@ function ThreadMenu({
     onSnooze({ threadIds: [...targetIds], accountId: activeAccountId });
   };
 
+  const handleToggleMute = async () => {
+    for (const id of targetIds) {
+      const t = threads.find((th) => th.id === id);
+      if (!t) continue;
+      const newMuted = !t.isMuted;
+      if (newMuted) {
+        await muteThreadDb(activeAccountId, id);
+        const client = await getGmailClient(activeAccountId);
+        await client.modifyThread(id, undefined, ["INBOX"]);
+        useThreadStore.getState().removeThread(id);
+      } else {
+        await unmuteThreadDb(activeAccountId, id);
+        useThreadStore.getState().updateThread(id, { isMuted: false });
+      }
+    }
+  };
+
   const handlePopOut = async () => {
     try {
       const { WebviewWindow } = await import("@tauri-apps/api/webviewWindow");
@@ -439,6 +458,13 @@ function ThreadMenu({
       icon: Pin,
       shortcut: "p",
       action: handleTogglePin,
+    },
+    {
+      id: "toggle-mute",
+      label: isMuted ? "Unmute" : "Mute",
+      icon: VolumeX,
+      shortcut: "m",
+      action: handleToggleMute,
     },
     {
       id: "spam",

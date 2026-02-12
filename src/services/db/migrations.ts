@@ -411,6 +411,14 @@ const MIGRATIONS = [
         ('auto_archive_after_unsubscribe', 'true');
     `,
   },
+  {
+    version: 7,
+    description: "Mute thread support",
+    sql: `
+      ALTER TABLE threads ADD COLUMN is_muted INTEGER DEFAULT 0;
+      CREATE INDEX idx_threads_muted ON threads(account_id, is_muted);
+    `,
+  },
 ];
 
 /**

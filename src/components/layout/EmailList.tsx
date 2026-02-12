@@ -200,6 +200,7 @@ export function EmailList({ width, listRef }: { width?: number; listRef?: React.
           isRead: t.is_read === 1,
           isStarred: t.is_starred === 1,
           isPinned: t.is_pinned === 1,
+          isMuted: t.is_muted === 1,
           hasAttachments: t.has_attachments === 1,
           labelIds,
           fromName: t.from_name,

@@ -86,6 +86,7 @@ export default function ThreadWindow() {
           isRead: dbThread.is_read === 1,
           isStarred: dbThread.is_starred === 1,
           isPinned: dbThread.is_pinned === 1,
+          isMuted: dbThread.is_muted === 1,
           hasAttachments: dbThread.has_attachments === 1,
           labelIds,
           fromName: dbThread.from_name,

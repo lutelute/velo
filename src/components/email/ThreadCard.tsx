@@ -3,7 +3,7 @@ import type { Thread } from "@/stores/threadStore";
 import { useThreadStore } from "@/stores/threadStore";
 import { useUIStore } from "@/stores/uiStore";
 import { formatRelativeDate } from "@/utils/date";
-import { Paperclip, Star, Check, Pin, BellRing } from "lucide-react";
+import { Paperclip, Star, Check, Pin, BellRing, VolumeX } from "lucide-react";
 import type { DragData } from "@/components/dnd/DndProvider";
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -139,6 +139,11 @@ export function ThreadCard({ thread, isSelected, onClick, onContextMenu, categor
             {hasFollowUp && (
               <span className="shrink-0 text-accent" title="Follow-up reminder set">
                 <BellRing size={12} />
+              </span>
+            )}
+            {thread.isMuted && (
+              <span className="shrink-0 text-warning" title="Muted">
+                <VolumeX size={12} />
               </span>
             )}
             {thread.isPinned && (

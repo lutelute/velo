@@ -10,7 +10,7 @@ import { useContextMenuStore } from "@/stores/contextMenuStore";
 import { getGmailClient } from "@/services/gmail/tokenManager";
 import { getSetting } from "@/services/db/settings";
 import { isAllowlisted } from "@/services/db/imageAllowlist";
-import { ExternalLink, Reply, ReplyAll, Forward, Printer, Download, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { ExternalLink, Reply, ReplyAll, Forward, Printer, Download, PanelRightClose, PanelRightOpen, VolumeX } from "lucide-react";
 import { escapeHtml, sanitizeHtml } from "@/utils/sanitize";
 import { isNoReplyAddress } from "@/utils/noReply";
 import { ThreadSummary } from "./ThreadSummary";
@@ -307,8 +307,13 @@ export function ThreadView({ thread }: ThreadViewProps) {
         {/* Thread header */}
         <div className="px-6 py-4 border-b border-border-primary flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-semibold text-text-primary">
+            <h1 className="text-lg font-semibold text-text-primary flex items-center gap-2">
               {thread.subject ?? "(No subject)"}
+              {thread.isMuted && (
+                <span className="text-warning shrink-0" title="Muted">
+                  <VolumeX size={16} />
+                </span>
+              )}
             </h1>
             <div className="text-xs text-text-tertiary mt-1">
               {messages.length} message{messages.length !== 1 ? "s" : ""} in this thread

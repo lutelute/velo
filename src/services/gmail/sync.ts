@@ -8,6 +8,7 @@ import { updateAccountSyncState } from "../db/accounts";
 import { shouldNotifyForMessage, queueNewEmailNotification } from "../notifications/notificationManager";
 import { applyFiltersToMessages } from "../filters/filterEngine";
 import { getSetting } from "../db/settings";
+import { getMutedThreadIds } from "../db/threads";
 import { getThreadCategory } from "../db/threadCategories";
 import { getVipSenders } from "../db/notificationVips";
 
@@ -338,6 +339,7 @@ export async function deltaSync(
 
     // Load settings once for the whole sync cycle
     const autoArchiveCategories = await loadAutoArchiveCategories();
+    const mutedThreadIds = await getMutedThreadIds(accountId);
     const smartNotifications = (await getSetting("smart_notifications")) !== "false";
     const notifyCategories = new Set(
       ((await getSetting("notify_categories")) ?? "Primary").split(",").map((s) => s.trim()).filter(Boolean),
@@ -355,6 +357,21 @@ export async function deltaSync(
 
           const parsedMessages = thread.messages.map(parseGmailMessage);
           await processAndStoreThread(thread, accountId, parsedMessages, client, autoArchiveCategories);
+
+          // Auto-archive muted threads that reappear in INBOX
+          if (mutedThreadIds.has(threadId)) {
+            const hasInbox = parsedMessages.some((m) => m.labelIds.includes("INBOX"));
+            if (hasInbox) {
+              try {
+                await client.modifyThread(threadId, undefined, ["INBOX"]);
+                await setThreadLabels(accountId, threadId,
+                  [...new Set(parsedMessages.flatMap((m) => m.labelIds))].filter((l) => l !== "INBOX"),
+                );
+              } catch (err) {
+                console.error(`Failed to auto-archive muted thread ${threadId}:`, err);
+              }
+            }
+          }
 
           // Send desktop notifications for new unread inbox messages (smart-filtered)
           for (const parsed of parsedMessages) {
