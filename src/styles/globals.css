@@ -70,10 +70,10 @@
 }
 
 /* Font scale — set on <html> like .dark */
-html.font-scale-small { font-size: 87.5%; }
+html.font-scale-small { font-size: 82%; }
 html.font-scale-default { font-size: 100%; }
-html.font-scale-large { font-size: 112.5%; }
-html.font-scale-xlarge { font-size: 125%; }
+html.font-scale-large { font-size: 118%; }
+html.font-scale-xlarge { font-size: 136%; }
 
 /* Base styles */
 html,

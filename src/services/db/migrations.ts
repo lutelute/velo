@@ -168,7 +168,7 @@ const MIGRATIONS = [
         ('notifications_enabled', 'true'),
         ('undo_send_delay_seconds', '5'),
         ('default_font', 'system'),
-        ('font_size', '14');
+        ('font_size', 'default');
 
       -- Migration tracking
       CREATE TABLE IF NOT EXISTS _migrations (
