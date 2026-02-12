@@ -23,6 +23,7 @@ import {
   Sparkles,
   MailMinus,
   Code,
+  Check,
   type LucideIcon,
 } from "lucide-react";
 import { SignatureEditor } from "./SignatureEditor";
@@ -33,6 +34,7 @@ import { ContactEditor } from "./ContactEditor";
 import { SubscriptionManager } from "./SubscriptionManager";
 import { SHORTCUTS, getDefaultKeyMap } from "@/constants/shortcuts";
 import { useShortcutStore } from "@/stores/shortcutStore";
+import { COLOR_THEMES } from "@/constants/themes";
 
 type SettingsTab = "general" | "composing" | "labels" | "filters" | "contacts" | "accounts" | "sync" | "shortcuts" | "ai" | "subscriptions" | "developer";
 
@@ -51,7 +53,7 @@ const tabs: { id: SettingsTab; label: string; icon: LucideIcon }[] = [
 ];
 
 export function SettingsPage() {
-  const { theme, setTheme, readingPanePosition, setReadingPanePosition, emailDensity, setEmailDensity, fontScale, setFontScale, defaultReplyMode, setDefaultReplyMode, markAsReadBehavior, setMarkAsReadBehavior, sendAndArchive, setSendAndArchive } = useUIStore();
+  const { theme, setTheme, readingPanePosition, setReadingPanePosition, emailDensity, setEmailDensity, fontScale, setFontScale, colorTheme, setColorTheme, defaultReplyMode, setDefaultReplyMode, markAsReadBehavior, setMarkAsReadBehavior, sendAndArchive, setSendAndArchive } = useUIStore();
   const setActiveLabel = useUIStore((s) => s.setActiveLabel);
   const { accounts, removeAccount: removeAccountFromStore } = useAccountStore();
   const [activeTab, setActiveTab] = useState<SettingsTab>("general");
@@ -361,6 +363,35 @@ export function SettingsPage() {
                         <option value="large">Large</option>
                         <option value="xlarge">Extra Large</option>
                       </select>
+                    </SettingRow>
+                    <SettingRow label="Accent color">
+                      <div className="flex items-center gap-2">
+                        {COLOR_THEMES.map((t) => {
+                          const isSelected = colorTheme === t.id;
+                          return (
+                            <button
+                              key={t.id}
+                              onClick={() => setColorTheme(t.id)}
+                              title={t.name}
+                              className={`relative w-7 h-7 rounded-full transition-all ${
+                                isSelected
+                                  ? "ring-2 ring-offset-2 ring-offset-bg-primary scale-110"
+                                  : "hover:scale-105"
+                              }`}
+                              style={{
+                                backgroundColor: t.swatch,
+                                boxShadow: isSelected
+                                  ? `0 0 0 2px var(--color-bg-primary), 0 0 0 4px ${t.swatch}`
+                                  : undefined,
+                              }}
+                            >
+                              {isSelected && (
+                                <Check size={14} className="absolute inset-0 m-auto text-white drop-shadow-sm" />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </SettingRow>
                   </Section>
 

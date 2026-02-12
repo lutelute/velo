@@ -52,6 +52,8 @@ import { DndProvider } from "./components/dnd/DndProvider";
 import { TitleBar } from "./components/layout/TitleBar";
 import { useShortcutStore } from "./stores/shortcutStore";
 import { ContextMenuPortal } from "./components/ui/ContextMenuPortal";
+import { getThemeById, COLOR_THEMES } from "./constants/themes";
+import type { ColorThemeId } from "./constants/themes";
 
 function ResizableEmailLayout() {
   const emailListWidth = useUIStore((s) => s.emailListWidth);
@@ -101,7 +103,7 @@ function ResizableEmailLayout() {
 }
 
 export default function App() {
-  const { theme, setTheme, sidebarCollapsed, setSidebarCollapsed, setContactSidebarVisible, readingPanePosition, setReadingPanePosition, setReadFilter, setEmailListWidth, setEmailDensity, setDefaultReplyMode, setMarkAsReadBehavior, setSendAndArchive, fontScale, setFontScale, activeLabel } = useUIStore();
+  const { theme, setTheme, sidebarCollapsed, setSidebarCollapsed, setContactSidebarVisible, readingPanePosition, setReadingPanePosition, setReadFilter, setEmailListWidth, setEmailDensity, setDefaultReplyMode, setMarkAsReadBehavior, setSendAndArchive, fontScale, setFontScale, colorTheme, setColorTheme, activeLabel } = useUIStore();
   const { setAccounts } = useAccountStore();
   const [showAddAccount, setShowAddAccount] = useState(false);
   const [initialized, setInitialized] = useState(false);
@@ -226,6 +228,12 @@ export default function App() {
           setFontScale(savedFontScale);
         }
 
+        // Restore color theme
+        const savedColorTheme = await getSetting("color_theme");
+        if (savedColorTheme && COLOR_THEMES.some((t) => t.id === savedColorTheme)) {
+          setColorTheme(savedColorTheme as ColorThemeId);
+        }
+
         // Load custom keyboard shortcuts
         await useShortcutStore.getState().loadKeyMap();
 
@@ -284,7 +292,7 @@ export default function App() {
       unregisterComposeShortcut();
       deepLinkCleanupRef?.();
     };
-  }, [setAccounts, setTheme, setSidebarCollapsed, setContactSidebarVisible, setReadingPanePosition, setReadFilter, setEmailListWidth, setEmailDensity, setDefaultReplyMode, setMarkAsReadBehavior, setSendAndArchive, setFontScale]);
+  }, [setAccounts, setTheme, setSidebarCollapsed, setContactSidebarVisible, setReadingPanePosition, setReadFilter, setEmailListWidth, setEmailDensity, setDefaultReplyMode, setMarkAsReadBehavior, setSendAndArchive, setFontScale, setColorTheme]);
 
   // Listen for sync status updates
   useEffect(() => {
@@ -338,6 +346,38 @@ export default function App() {
     root.classList.remove("font-scale-small", "font-scale-default", "font-scale-large", "font-scale-xlarge");
     root.classList.add(`font-scale-${fontScale}`);
   }, [fontScale]);
+
+  // Apply color theme CSS custom properties to <html>
+  useEffect(() => {
+    const root = document.documentElement;
+    const props = ["--color-accent", "--color-accent-hover", "--color-accent-light", "--color-bg-selected", "--color-sidebar-active"];
+
+    const apply = () => {
+      if (colorTheme === "indigo") {
+        // Default theme — remove inline overrides, let CSS handle it
+        for (const p of props) root.style.removeProperty(p);
+        return;
+      }
+      const themeData = getThemeById(colorTheme);
+      const isDark =
+        theme === "dark" ||
+        (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+      const colors = isDark ? themeData.dark : themeData.light;
+      root.style.setProperty("--color-accent", colors.accent);
+      root.style.setProperty("--color-accent-hover", colors.accentHover);
+      root.style.setProperty("--color-accent-light", colors.accentLight);
+      root.style.setProperty("--color-bg-selected", colors.bgSelected);
+      root.style.setProperty("--color-sidebar-active", colors.sidebarActive);
+    };
+
+    apply();
+
+    if (theme === "system") {
+      const mq = window.matchMedia("(prefers-color-scheme: dark)");
+      mq.addEventListener("change", apply);
+      return () => mq.removeEventListener("change", apply);
+    }
+  }, [colorTheme, theme]);
 
   const handleAddAccountSuccess = useCallback(async () => {
     setShowAddAccount(false);

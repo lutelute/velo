@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { setSetting } from "@/services/db/settings";
+import type { ColorThemeId } from "@/constants/themes";
 
 type Theme = "light" | "dark" | "system";
 type ReadingPanePosition = "right" | "bottom" | "hidden";
@@ -21,6 +22,7 @@ interface UIState {
   defaultReplyMode: DefaultReplyMode;
   markAsReadBehavior: MarkAsReadBehavior;
   fontScale: FontScale;
+  colorTheme: ColorThemeId;
   sendAndArchive: boolean;
   setTheme: (theme: Theme) => void;
   toggleSidebar: () => void;
@@ -35,6 +37,7 @@ interface UIState {
   setDefaultReplyMode: (mode: DefaultReplyMode) => void;
   setMarkAsReadBehavior: (behavior: MarkAsReadBehavior) => void;
   setFontScale: (scale: FontScale) => void;
+  setColorTheme: (theme: ColorThemeId) => void;
   setSendAndArchive: (enabled: boolean) => void;
 }
 
@@ -50,6 +53,7 @@ export const useUIStore = create<UIState>((set) => ({
   defaultReplyMode: "reply",
   markAsReadBehavior: "instant",
   fontScale: "default",
+  colorTheme: "indigo",
   sendAndArchive: false,
 
   setTheme: (theme) => set({ theme }),
@@ -95,6 +99,10 @@ export const useUIStore = create<UIState>((set) => ({
   setFontScale: (fontScale) => {
     setSetting("font_size", fontScale).catch(() => {});
     set({ fontScale });
+  },
+  setColorTheme: (colorTheme) => {
+    setSetting("color_theme", colorTheme).catch(() => {});
+    set({ colorTheme });
   },
   setSendAndArchive: (sendAndArchive) => {
     setSetting("send_and_archive", String(sendAndArchive)).catch(() => {});
