@@ -349,7 +349,7 @@ export function Sidebar({ collapsed, onAddAccount }: SidebarProps) {
               </DroppableNavItem>
               {/* Category sub-items when split mode is active */}
               {isInbox && inboxViewMode === "split" && !collapsed && (
-                <div className="ml-4">
+                <div>
                   {CATEGORY_ITEMS.map((cat) => {
                     const CatIcon = cat.icon;
                     const isCatActive = activeLabel === "inbox" && activeCategory === cat.id;
@@ -359,7 +359,7 @@ export function Sidebar({ collapsed, onAddAccount }: SidebarProps) {
                         onClick={() => {
                           navigateToLabel("inbox", { category: cat.id });
                         }}
-                        className={`flex items-center gap-2.5 w-full py-1.5 px-3 text-[0.8125rem] transition-colors ${
+                        className={`flex items-center gap-2 w-full py-1.5 pl-7 pr-3 text-left text-[0.8125rem] transition-colors ${
                           isCatActive
                             ? "text-accent font-medium"
                             : "text-sidebar-text/70 hover:text-sidebar-text hover:bg-sidebar-hover"
