@@ -33,7 +33,8 @@ You just implemented or modified a feature. Now add or update its documentation 
      id: "kebab-case-unique-id",        // unique across ALL categories
      icon: SomeLucideIcon,              // import from lucide-react
      title: "Short user-facing title",  // what users see
-     description: "2-3 sentences explaining what this feature does and why it's useful. Write from the USER's perspective, not a developer's.",
+     summary: "One-line summary shown when collapsed (~40-60 chars).",
+     description: "Detailed explanation shown when the card is expanded. 3-5 sentences covering what it does, how it works, and practical details. Write from the USER's perspective, not a developer's.",
      tips?: [                           // optional but recommended
        { text: "How to use it or a useful detail" },
        { text: "Keyboard shortcut", shortcut: "key" },

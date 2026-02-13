@@ -15,14 +15,14 @@ export function HelpSidebar({ activeTopic }: HelpSidebarProps) {
           <button
             key={category.id}
             onClick={() => navigateToHelp(category.id)}
-            className={`flex items-center gap-2.5 w-full px-4 py-2 text-[0.8125rem] transition-colors ${
+            className={`flex items-start gap-2.5 w-full px-4 py-2 text-[0.8125rem] text-left transition-colors ${
               isActive
                 ? "bg-bg-selected text-accent font-medium"
                 : "text-text-secondary hover:bg-bg-hover hover:text-text-primary"
             }`}
           >
-            <Icon size={15} className="shrink-0" />
-            {category.label}
+            <Icon size={15} className="shrink-0 mt-0.5" />
+            <span>{category.label}</span>
           </button>
         );
       })}
