@@ -26,6 +26,7 @@ import {
   Check,
   Mail,
   FolderSearch,
+  Zap,
   type LucideIcon,
 } from "lucide-react";
 import { SignatureEditor } from "./SignatureEditor";
@@ -35,6 +36,7 @@ import { LabelEditor } from "./LabelEditor";
 import { ContactEditor } from "./ContactEditor";
 import { SubscriptionManager } from "./SubscriptionManager";
 import { SmartFolderEditor } from "./SmartFolderEditor";
+import { QuickStepEditor } from "./QuickStepEditor";
 import { SHORTCUTS, getDefaultKeyMap } from "@/constants/shortcuts";
 import { useShortcutStore } from "@/stores/shortcutStore";
 import { COLOR_THEMES } from "@/constants/themes";
@@ -45,7 +47,7 @@ import {
   type SendAsAlias,
 } from "@/services/db/sendAsAliases";
 
-type SettingsTab = "general" | "composing" | "labels" | "filters" | "smart-folders" | "contacts" | "accounts" | "sync" | "shortcuts" | "ai" | "subscriptions" | "developer";
+type SettingsTab = "general" | "composing" | "labels" | "filters" | "smart-folders" | "quickSteps" | "contacts" | "accounts" | "sync" | "shortcuts" | "ai" | "subscriptions" | "developer";
 
 const tabs: { id: SettingsTab; label: string; icon: LucideIcon }[] = [
   { id: "general", label: "General", icon: Settings },
@@ -53,6 +55,7 @@ const tabs: { id: SettingsTab; label: string; icon: LucideIcon }[] = [
   { id: "labels", label: "Labels", icon: Tag },
   { id: "filters", label: "Filters", icon: Filter },
   { id: "smart-folders", label: "Smart Folders", icon: FolderSearch },
+  { id: "quickSteps", label: "Quick Steps", icon: Zap },
   { id: "contacts", label: "Contacts", icon: Users },
   { id: "subscriptions", label: "Subscriptions", icon: MailMinus },
   { id: "accounts", label: "Accounts", icon: UserCircle },
@@ -710,6 +713,16 @@ export function SettingsPage() {
                     Smart folders are saved searches that automatically show matching emails. Use search operators like <code className="bg-bg-tertiary px-1 rounded">is:unread</code>, <code className="bg-bg-tertiary px-1 rounded">from:</code>, <code className="bg-bg-tertiary px-1 rounded">has:attachment</code>, <code className="bg-bg-tertiary px-1 rounded">after:</code>.
                   </p>
                   <SmartFolderEditor />
+                </Section>
+              )}
+
+              {activeTab === "quickSteps" && (
+                <Section title="Quick Steps">
+                  <p className="text-xs text-text-tertiary mb-3">
+                    Quick steps let you chain multiple actions together into a single click.
+                    Apply them from the right-click menu on any thread.
+                  </p>
+                  <QuickStepEditor />
                 </Section>
               )}
 

@@ -494,6 +494,26 @@ const MIGRATIONS = [
         ('phishing_sensitivity', 'default');
     `,
   },
+  {
+    version: 12,
+    description: "Quick steps",
+    sql: `
+      CREATE TABLE IF NOT EXISTS quick_steps (
+        id TEXT PRIMARY KEY,
+        account_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        description TEXT,
+        shortcut TEXT,
+        actions_json TEXT NOT NULL,
+        icon TEXT,
+        is_enabled INTEGER DEFAULT 1,
+        continue_on_error INTEGER DEFAULT 0,
+        sort_order INTEGER DEFAULT 0,
+        created_at INTEGER DEFAULT (unixepoch())
+      );
+      CREATE INDEX idx_quick_steps_account ON quick_steps(account_id);
+    `,
+  },
 ];
 
 /**
