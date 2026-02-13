@@ -75,6 +75,8 @@ export function SettingsPage() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncPeriodDays, setSyncPeriodDays] = useState("365");
   const [blockRemoteImages, setBlockRemoteImages] = useState(true);
+  const [phishingDetectionEnabled, setPhishingDetectionEnabled] = useState(true);
+  const [phishingSensitivity, setPhishingSensitivity] = useState<"low" | "default" | "high">("default");
   const [autostartEnabled, setAutostartEnabled] = useState(false);
   const [aiProvider, setAiProvider] = useState<"claude" | "openai" | "gemini">("claude");
   const [claudeApiKey, setClaudeApiKey] = useState("");
@@ -109,6 +111,10 @@ export function SettingsPage() {
       setClientSecret(secret ?? "");
       const blockImg = await getSetting("block_remote_images");
       setBlockRemoteImages(blockImg !== "false");
+      const phishingEnabled = await getSetting("phishing_detection_enabled");
+      setPhishingDetectionEnabled(phishingEnabled !== "false");
+      const phishingSens = await getSetting("phishing_sensitivity");
+      if (phishingSens === "low" || phishingSens === "high") setPhishingSensitivity(phishingSens);
       const syncDays = await getSetting("sync_period_days");
       setSyncPeriodDays(syncDays ?? "365");
 
@@ -532,7 +538,7 @@ export function SettingsPage() {
                     )}
                   </Section>
 
-                  <Section title="Privacy">
+                  <Section title="Privacy & Security">
                     <ToggleRow
                       label="Block remote images"
                       description="Hides tracking pixels and remote images until you choose to load them"
@@ -543,6 +549,33 @@ export function SettingsPage() {
                         await setSetting("block_remote_images", newVal ? "true" : "false");
                       }}
                     />
+                    <ToggleRow
+                      label="Phishing link detection"
+                      description="Scan message links for phishing indicators and show warnings"
+                      checked={phishingDetectionEnabled}
+                      onToggle={async () => {
+                        const newVal = !phishingDetectionEnabled;
+                        setPhishingDetectionEnabled(newVal);
+                        await setSetting("phishing_detection_enabled", newVal ? "true" : "false");
+                      }}
+                    />
+                    {phishingDetectionEnabled && (
+                      <SettingRow label="Detection sensitivity">
+                        <select
+                          value={phishingSensitivity}
+                          onChange={async (e) => {
+                            const val = e.target.value as "low" | "default" | "high";
+                            setPhishingSensitivity(val);
+                            await setSetting("phishing_sensitivity", val);
+                          }}
+                          className="w-48 bg-bg-tertiary text-text-primary text-sm px-3 py-1.5 rounded-md border border-border-primary focus:border-accent outline-none"
+                        >
+                          <option value="low">Low (fewer warnings)</option>
+                          <option value="default">Default</option>
+                          <option value="high">High (more warnings)</option>
+                        </select>
+                      </SettingRow>
+                    )}
                   </Section>
 
                   <Section title="Storage">

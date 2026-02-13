@@ -469,6 +469,31 @@ const MIGRATIONS = [
       CREATE INDEX idx_threads_muted ON threads(account_id, is_muted);
     `,
   },
+  {
+    version: 11,
+    description: "Phishing detection cache and allowlist",
+    sql: `
+      CREATE TABLE IF NOT EXISTS link_scan_results (
+        message_id TEXT NOT NULL,
+        account_id TEXT NOT NULL,
+        result_json TEXT NOT NULL,
+        scanned_at INTEGER DEFAULT (unixepoch()),
+        PRIMARY KEY (account_id, message_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS phishing_allowlist (
+        id TEXT PRIMARY KEY,
+        account_id TEXT NOT NULL,
+        sender_address TEXT NOT NULL,
+        created_at INTEGER DEFAULT (unixepoch()),
+        UNIQUE(account_id, sender_address)
+      );
+
+      INSERT OR IGNORE INTO settings (key, value) VALUES
+        ('phishing_detection_enabled', 'true'),
+        ('phishing_sensitivity', 'default');
+    `,
+  },
 ];
 
 /**
