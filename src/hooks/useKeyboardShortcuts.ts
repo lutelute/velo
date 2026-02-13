@@ -6,7 +6,7 @@ import { useAccountStore } from "@/stores/accountStore";
 import { useShortcutStore } from "@/stores/shortcutStore";
 import { useContextMenuStore } from "@/stores/contextMenuStore";
 import { getGmailClient } from "@/services/gmail/tokenManager";
-import { deleteThread as deleteThreadFromDb, pinThread as pinThreadDb, unpinThread as unpinThreadDb } from "@/services/db/threads";
+import { deleteThread as deleteThreadFromDb, pinThread as pinThreadDb, unpinThread as unpinThreadDb, muteThread as muteThreadDb, unmuteThread as unmuteThreadDb } from "@/services/db/threads";
 import { deleteDraftsForThread } from "@/services/gmail/draftDeletion";
 import { getMessagesForThread } from "@/services/db/messages";
 import { parseUnsubscribeUrl } from "@/components/email/MessageItem";
@@ -437,6 +437,47 @@ async function executeAction(actionId: string): Promise<void> {
           }
         } catch (err) {
           console.error("Unsubscribe failed:", err);
+        }
+      }
+      break;
+    }
+    case "action.mute": {
+      const multiMuteIds = useThreadStore.getState().selectedThreadIds;
+      if (multiMuteIds.size > 0 && activeAccountId) {
+        try {
+          const client = await getGmailClient(activeAccountId);
+          const ids = [...multiMuteIds];
+          for (const id of ids) {
+            const t = threads.find((thread) => thread.id === id);
+            if (t?.isMuted) {
+              await unmuteThreadDb(activeAccountId, id);
+              useThreadStore.getState().updateThread(id, { isMuted: false });
+            } else {
+              await muteThreadDb(activeAccountId, id);
+              await client.modifyThread(id, undefined, ["INBOX"]);
+              useThreadStore.getState().removeThread(id);
+            }
+          }
+        } catch (err) {
+          console.error("Bulk mute failed:", err);
+        }
+      } else if (selectedId && activeAccountId) {
+        const thread = threads.find((t) => t.id === selectedId);
+        if (thread) {
+          if (thread.isMuted) {
+            await unmuteThreadDb(activeAccountId, selectedId);
+            useThreadStore.getState().updateThread(selectedId, { isMuted: false });
+          } else {
+            try {
+              await muteThreadDb(activeAccountId, selectedId);
+              const client = await getGmailClient(activeAccountId);
+              await client.modifyThread(selectedId, undefined, ["INBOX"]);
+              useThreadStore.getState().removeThread(selectedId);
+            } catch (err) {
+              console.error("Mute failed:", err);
+              await unmuteThreadDb(activeAccountId, selectedId);
+            }
+          }
         }
       }
       break;

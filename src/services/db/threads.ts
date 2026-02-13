@@ -14,6 +14,7 @@ export interface DbThread {
   is_snoozed: number;
   snooze_until: number | null;
   is_pinned: number;
+  is_muted: number;
   from_name: string | null;
   from_address: string | null;
 }
@@ -207,4 +208,37 @@ export async function unpinThread(
     "UPDATE threads SET is_pinned = 0 WHERE account_id = $1 AND id = $2",
     [accountId, threadId],
   );
+}
+
+export async function muteThread(
+  accountId: string,
+  threadId: string,
+): Promise<void> {
+  const db = await getDb();
+  await db.execute(
+    "UPDATE threads SET is_muted = 1 WHERE account_id = $1 AND id = $2",
+    [accountId, threadId],
+  );
+}
+
+export async function unmuteThread(
+  accountId: string,
+  threadId: string,
+): Promise<void> {
+  const db = await getDb();
+  await db.execute(
+    "UPDATE threads SET is_muted = 0 WHERE account_id = $1 AND id = $2",
+    [accountId, threadId],
+  );
+}
+
+export async function getMutedThreadIds(
+  accountId: string,
+): Promise<Set<string>> {
+  const db = await getDb();
+  const rows = await db.select<{ id: string }[]>(
+    "SELECT id FROM threads WHERE account_id = $1 AND is_muted = 1",
+    [accountId],
+  );
+  return new Set(rows.map((r) => r.id));
 }

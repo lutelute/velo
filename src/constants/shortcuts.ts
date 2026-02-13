@@ -36,6 +36,7 @@ export const SHORTCUTS: ShortcutCategory[] = [
     { id: "action.star", keys: "s", desc: "Star / Unstar" },
     { id: "action.pin", keys: "p", desc: "Pin / Unpin" },
     { id: "action.unsubscribe", keys: "u", desc: "Unsubscribe" },
+    { id: "action.mute", keys: "m", desc: "Mute / Unmute" },
     { id: "action.selectAll", keys: "Ctrl+A", desc: "Select all" },
     { id: "action.selectFromHere", keys: "Ctrl+Shift+A", desc: "Select all from here" },
   ]},

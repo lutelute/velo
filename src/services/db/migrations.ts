@@ -461,6 +461,14 @@ const MIGRATIONS = [
     description: "Email authentication results",
     sql: `ALTER TABLE messages ADD COLUMN auth_results TEXT;`,
   },
+  {
+    version: 10,
+    description: "Mute thread support",
+    sql: `
+      ALTER TABLE threads ADD COLUMN is_muted INTEGER DEFAULT 0;
+      CREATE INDEX idx_threads_muted ON threads(account_id, is_muted);
+    `,
+  },
 ];
 
 /**

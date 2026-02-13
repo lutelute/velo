@@ -4,12 +4,12 @@ import { useThreadStore } from "@/stores/threadStore";
 import { useAccountStore } from "@/stores/accountStore";
 import { useUIStore } from "@/stores/uiStore";
 import { getGmailClient } from "@/services/gmail/tokenManager";
-import { deleteThread as deleteThreadFromDb, pinThread as pinThreadDb, unpinThread as unpinThreadDb } from "@/services/db/threads";
+import { deleteThread as deleteThreadFromDb, pinThread as pinThreadDb, unpinThread as unpinThreadDb, muteThread as muteThreadDb, unmuteThread as unmuteThreadDb } from "@/services/db/threads";
 import { deleteDraftsForThread } from "@/services/gmail/draftDeletion";
 import { snoozeThread } from "@/services/snooze/snoozeManager";
 import { SnoozeDialog } from "./SnoozeDialog";
 import { FollowUpDialog } from "./FollowUpDialog";
-import { Archive, Trash2, MailOpen, Mail, Star, Clock, Ban, Pin, MailMinus, BellRing } from "lucide-react";
+import { Archive, Trash2, MailOpen, Mail, Star, Clock, Ban, Pin, MailMinus, BellRing, VolumeX } from "lucide-react";
 import type { DbMessage } from "@/services/db/messages";
 import { insertFollowUpReminder, getFollowUpForThread, cancelFollowUpForThread } from "@/services/db/followUpReminders";
 
@@ -180,6 +180,34 @@ export function ActionBar({ thread, messages }: ActionBarProps) {
     }
   };
 
+  const handleToggleMute = async () => {
+    if (!activeAccountId) return;
+    const newMuted = !thread.isMuted;
+    if (newMuted) {
+      // Mute: mark as muted and archive
+      updateThread(thread.id, { isMuted: true });
+      try {
+        await muteThreadDb(activeAccountId, thread.id);
+        const client = await getGmailClient(activeAccountId);
+        await client.modifyThread(thread.id, undefined, ["INBOX"]);
+        removeThread(thread.id);
+      } catch (err) {
+        console.error("Failed to mute:", err);
+        await unmuteThreadDb(activeAccountId, thread.id);
+        updateThread(thread.id, { isMuted: false });
+      }
+    } else {
+      // Unmute
+      updateThread(thread.id, { isMuted: false });
+      try {
+        await unmuteThreadDb(activeAccountId, thread.id);
+      } catch (err) {
+        console.error("Failed to unmute:", err);
+        updateThread(thread.id, { isMuted: true });
+      }
+    }
+  };
+
   const handleFollowUp = async (remindAt: number) => {
     if (!activeAccountId || !messages || messages.length === 0) return;
     setShowFollowUp(false);
@@ -248,6 +276,13 @@ export function ActionBar({ thread, messages }: ActionBarProps) {
           icon={<Pin size={14} className={thread.isPinned ? "fill-current" : ""} />}
           label={thread.isPinned ? "Unpin" : "Pin"}
           className={thread.isPinned ? "text-accent" : ""}
+        />
+        <ActionButton
+          onClick={handleToggleMute}
+          title={thread.isMuted ? "Unmute (m)" : "Mute (m)"}
+          icon={<VolumeX size={14} className={thread.isMuted ? "fill-current" : ""} />}
+          label={thread.isMuted ? "Unmute" : "Mute"}
+          className={thread.isMuted ? "text-warning" : ""}
         />
         {hasFollowUp ? (
           <ActionButton

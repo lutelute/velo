@@ -10,6 +10,7 @@ export interface Thread {
   isRead: boolean;
   isStarred: boolean;
   isPinned: boolean;
+  isMuted: boolean;
   hasAttachments: boolean;
   labelIds: string[];
   fromName: string | null;

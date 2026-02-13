@@ -6,6 +6,7 @@ import { GmailClient } from "./client";
 vi.mock("../db/threads", () => ({
   upsertThread: vi.fn(),
   setThreadLabels: vi.fn(),
+  getMutedThreadIds: vi.fn().mockResolvedValue(new Set()),
 }));
 vi.mock("../db/messages", () => ({
   upsertMessage: vi.fn(),
@@ -22,14 +23,31 @@ vi.mock("../db/settings", () => ({
 vi.mock("../db/threadCategories", () => ({
   getThreadCategoryWithManual: vi.fn().mockResolvedValue(null),
   setThreadCategory: vi.fn(),
+  getThreadCategory: vi.fn().mockResolvedValue(null),
+}));
+vi.mock("../db/notificationVips", () => ({
+  getVipSenders: vi.fn().mockResolvedValue(new Set()),
 }));
 vi.mock("@/services/categorization/ruleEngine", () => ({
   categorizeByRules: vi.fn().mockReturnValue("Primary"),
 }));
+vi.mock("../filters/filterEngine", () => ({
+  applyFiltersToMessages: vi.fn(),
+}));
+vi.mock("@/services/ai/categorizationManager", () => ({
+  categorizeNewThreads: vi.fn(),
+}));
+vi.mock("@/services/db/bundleRules", () => ({
+  getBundleRule: vi.fn().mockResolvedValue(null),
+  holdThread: vi.fn(),
+  getNextDeliveryTime: vi.fn(),
+}));
 
 const mockNotify = vi.fn();
+const mockShouldNotify = vi.fn().mockReturnValue(true);
 vi.mock("../notifications/notificationManager", () => ({
   queueNewEmailNotification: (...args: unknown[]) => mockNotify(...args),
+  shouldNotifyForMessage: (...args: unknown[]) => mockShouldNotify(...args),
 }));
 
 // Mock parseGmailMessage
@@ -88,6 +106,8 @@ function createMockClient(historyItems: unknown[]): GmailClient {
 describe("deltaSync notifications", () => {
   beforeEach(() => {
     mockNotify.mockClear();
+    mockShouldNotify.mockClear();
+    mockShouldNotify.mockReturnValue(true);
   });
 
   it("sends notification for new unread inbox message", async () => {
