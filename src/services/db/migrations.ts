@@ -432,6 +432,30 @@ const MIGRATIONS = [
       CREATE INDEX idx_send_as_account ON send_as_aliases(account_id);
     `,
   },
+  {
+    version: 8,
+    description: "Smart folders",
+    sql: `
+      CREATE TABLE IF NOT EXISTS smart_folders (
+        id TEXT PRIMARY KEY,
+        account_id TEXT,
+        name TEXT NOT NULL,
+        query TEXT NOT NULL,
+        icon TEXT DEFAULT 'Search',
+        color TEXT,
+        sort_order INTEGER DEFAULT 0,
+        is_default INTEGER DEFAULT 0,
+        created_at INTEGER DEFAULT (unixepoch()),
+        FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+      );
+      CREATE INDEX idx_smart_folders_account ON smart_folders(account_id);
+
+      INSERT INTO smart_folders (id, account_id, name, query, icon, sort_order, is_default) VALUES
+        ('sf-unread', NULL, 'Unread', 'is:unread', 'MailOpen', 0, 1),
+        ('sf-attachments', NULL, 'Has Attachments', 'has:attachment', 'Paperclip', 1, 1),
+        ('sf-starred-recent', NULL, 'Starred This Week', 'is:starred after:__LAST_7_DAYS__', 'Star', 2, 1);
+    `,
+  },
 ];
 
 /**

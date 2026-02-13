@@ -7,6 +7,7 @@ import { useComposerStore } from "@/stores/composerStore";
 import { useAccountStore } from "@/stores/accountStore";
 import { useLabelStore, type Label } from "@/stores/labelStore";
 import { useContextMenuStore } from "@/stores/contextMenuStore";
+import { useSmartFolderStore } from "@/stores/smartFolderStore";
 import {
   Inbox,
   Star,
@@ -29,6 +30,10 @@ import {
   Bell,
   Users,
   Newspaper,
+  Search,
+  MailOpen,
+  Paperclip,
+  FolderSearch,
   type LucideIcon,
 } from "lucide-react";
 
@@ -167,6 +172,21 @@ function DroppableLabelItem({
   );
 }
 
+const SMART_FOLDER_ICON_MAP: Record<string, LucideIcon> = {
+  Search,
+  MailOpen,
+  Paperclip,
+  Star,
+  FolderSearch,
+  Inbox,
+  Clock,
+  Tag,
+};
+
+function getSmartFolderIcon(iconName: string): LucideIcon {
+  return SMART_FOLDER_ICON_MAP[iconName] ?? Search;
+}
+
 const LABELS_COLLAPSED_COUNT = 3;
 
 export function Sidebar({ collapsed, onAddAccount }: SidebarProps) {
@@ -174,6 +194,7 @@ export function Sidebar({ collapsed, onAddAccount }: SidebarProps) {
   const openComposer = useComposerStore((s) => s.openComposer);
   const activeAccountId = useAccountStore((s) => s.activeAccountId);
   const { labels, loadLabels, deleteLabel } = useLabelStore();
+  const { folders: smartFolders, unreadCounts: smartFolderCounts, loadFolders: loadSmartFolders, refreshUnreadCounts: refreshSmartFolderCounts, createFolder: createSmartFolder } = useSmartFolderStore();
   const [labelsExpanded, setLabelsExpanded] = useState(false);
 
   // Inline label editing state
@@ -189,16 +210,25 @@ export function Sidebar({ collapsed, onAddAccount }: SidebarProps) {
     }
   }, [activeAccountId, loadLabels]);
 
-  // Reload labels on sync completion
+  // Load smart folders when active account changes
+  useEffect(() => {
+    loadSmartFolders(activeAccountId ?? undefined);
+    if (activeAccountId) {
+      refreshSmartFolderCounts(activeAccountId);
+    }
+  }, [activeAccountId, loadSmartFolders, refreshSmartFolderCounts]);
+
+  // Reload labels and smart folder counts on sync completion
   useEffect(() => {
     const handler = () => {
       if (activeAccountId) {
         loadLabels(activeAccountId);
+        refreshSmartFolderCounts(activeAccountId);
       }
     };
     window.addEventListener("velo-sync-done", handler);
     return () => window.removeEventListener("velo-sync-done", handler);
-  }, [activeAccountId, loadLabels]);
+  }, [activeAccountId, loadLabels, refreshSmartFolderCounts]);
 
   const handleDeleteLabel = useCallback(async (labelId: string) => {
     if (!activeAccountId) return;
@@ -233,6 +263,14 @@ export function Sidebar({ collapsed, onAddAccount }: SidebarProps) {
     setEditingLabelId(null);
     setShowNewLabelForm(true);
   }, []);
+
+  const handleAddSmartFolder = useCallback(async () => {
+    const name = window.prompt("Smart folder name:");
+    if (!name?.trim()) return;
+    const query = window.prompt("Search query (e.g. is:unread from:boss):");
+    if (!query?.trim()) return;
+    await createSmartFolder(name.trim(), query.trim(), activeAccountId ?? undefined);
+  }, [createSmartFolder, activeAccountId]);
 
   const editingLabel = editingLabelId ? labels.find((l) => l.id === editingLabelId) ?? null : null;
 
@@ -326,6 +364,61 @@ export function Sidebar({ collapsed, onAddAccount }: SidebarProps) {
             </div>
           );
         })}
+
+        {/* Smart Folders */}
+        {(smartFolders.length > 0 || !collapsed) && (
+          <>
+            {!collapsed && (
+              <div className="flex items-center justify-between px-3 pt-4 pb-1">
+                <span className="text-xs font-medium text-sidebar-text/60 uppercase tracking-wider">
+                  Smart Folders
+                </span>
+                <button
+                  onClick={handleAddSmartFolder}
+                  className="p-0.5 text-sidebar-text/40 hover:text-sidebar-text transition-colors"
+                  title="Add smart folder"
+                >
+                  <Plus size={14} />
+                </button>
+              </div>
+            )}
+            {smartFolders.map((folder) => {
+              const Icon = getSmartFolderIcon(folder.icon);
+              const isActive = activeLabel === `smart-folder:${folder.id}`;
+              const count = smartFolderCounts[folder.id] ?? 0;
+              return (
+                <button
+                  key={folder.id}
+                  onClick={() => setActiveLabel(`smart-folder:${folder.id}`)}
+                  title={collapsed ? folder.name : undefined}
+                  className={`flex items-center w-full py-2 text-sm transition-colors press-scale ${
+                    collapsed ? "justify-center px-0" : "gap-3 px-3 text-left"
+                  } ${
+                    isActive
+                      ? "bg-accent/10 text-accent font-medium"
+                      : "hover:bg-sidebar-hover text-sidebar-text"
+                  }`}
+                >
+                  <Icon
+                    size={18}
+                    className="shrink-0"
+                    style={folder.color ? { color: folder.color } : undefined}
+                  />
+                  {!collapsed && (
+                    <>
+                      <span className="flex-1 truncate">{folder.name}</span>
+                      {count > 0 && (
+                        <span className="text-[0.625rem] bg-accent/15 text-accent px-1.5 rounded-full leading-normal">
+                          {count}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </button>
+              );
+            })}
+          </>
+        )}
 
         {/* User labels */}
         {(labels.length > 0 || !collapsed) && (

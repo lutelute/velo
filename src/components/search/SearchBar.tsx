@@ -2,15 +2,25 @@ import { useRef, useCallback } from "react";
 import { searchMessages } from "@/services/db/search";
 import { useAccountStore } from "@/stores/accountStore";
 import { useThreadStore } from "@/stores/threadStore";
-import { Search, X } from "lucide-react";
+import { useSmartFolderStore } from "@/stores/smartFolderStore";
+import { Search, X, FolderPlus } from "lucide-react";
 
 export function SearchBar() {
   const searchQuery = useThreadStore((s) => s.searchQuery);
   const setSearch = useThreadStore((s) => s.setSearch);
   const clearSearch = useThreadStore((s) => s.clearSearch);
   const activeAccountId = useAccountStore((s) => s.activeAccountId);
+  const createSmartFolder = useSmartFolderStore((s) => s.createFolder);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleSaveAsSmartFolder = useCallback(async () => {
+    const query = searchQuery.trim();
+    if (query.length < 2) return;
+    const name = window.prompt("Save as Smart Folder:", query);
+    if (!name?.trim()) return;
+    await createSmartFolder(name.trim(), query, activeAccountId ?? undefined);
+  }, [searchQuery, activeAccountId, createSmartFolder]);
 
   const handleChange = useCallback(
     (value: string) => {
@@ -61,15 +71,26 @@ export function SearchBar() {
         onChange={(e) => handleChange(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="Search... (from: to: has:attachment)"
-        className="w-full bg-bg-tertiary text-text-primary text-sm pl-8 pr-8 py-1.5 rounded-md border border-border-primary focus:border-accent focus:outline-none placeholder:text-text-tertiary"
+        className="w-full bg-bg-tertiary text-text-primary text-sm pl-8 pr-14 py-1.5 rounded-md border border-border-primary focus:border-accent focus:outline-none placeholder:text-text-tertiary"
       />
       {searchQuery && (
-        <button
-          onClick={handleClear}
-          className="absolute right-2 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-primary transition-colors"
-        >
-          <X size={14} />
-        </button>
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+          {searchQuery.trim().length >= 2 && (
+            <button
+              onClick={handleSaveAsSmartFolder}
+              className="text-text-tertiary hover:text-accent transition-colors"
+              title="Save as Smart Folder"
+            >
+              <FolderPlus size={14} />
+            </button>
+          )}
+          <button
+            onClick={handleClear}
+            className="text-text-tertiary hover:text-text-primary transition-colors"
+          >
+            <X size={14} />
+          </button>
+        </div>
       )}
     </div>
   );

@@ -13,10 +13,13 @@ import { getActiveFollowUpThreadIds } from "@/services/db/followUpReminders";
 import { getBundleRules, getHeldThreadIds, getBundleSummary, type DbBundleRule } from "@/services/db/bundleRules";
 import { getGmailClient } from "@/services/gmail/tokenManager";
 import { useLabelStore } from "@/stores/labelStore";
+import { useSmartFolderStore } from "@/stores/smartFolderStore";
 import { useContextMenuStore } from "@/stores/contextMenuStore";
 import { useComposerStore } from "@/stores/composerStore";
 import { getMessagesForThread } from "@/services/db/messages";
-import { Archive, Trash2, X, Ban, Filter, ChevronRight, Package } from "lucide-react";
+import { getSmartFolderSearchQuery } from "@/services/search/smartFolderQuery";
+import { getDb } from "@/services/db/connection";
+import { Archive, Trash2, X, Ban, Filter, ChevronRight, Package, FolderSearch } from "lucide-react";
 import { EmptyState } from "../ui/EmptyState";
 import {
   InboxClearIllustration,
@@ -48,6 +51,12 @@ export function EmailList({ width, listRef }: { width?: number; listRef?: React.
   const setReadFilter = useUIStore((s) => s.setReadFilter);
   const readingPanePosition = useUIStore((s) => s.readingPanePosition);
   const userLabels = useLabelStore((s) => s.labels);
+  const smartFolders = useSmartFolderStore((s) => s.folders);
+
+  // Detect smart folder mode
+  const isSmartFolder = activeLabel.startsWith("smart-folder:");
+  const smartFolderId = isSmartFolder ? activeLabel.replace("smart-folder:", "") : null;
+  const activeSmartFolder = smartFolderId ? smartFolders.find((f) => f.id === smartFolderId) ?? null : null;
 
   const inboxViewMode = useUIStore((s) => s.inboxViewMode);
   const storeActiveCategory = useUIStore((s) => s.activeCategory);
@@ -229,29 +238,80 @@ export function EmailList({ width, listRef }: { width?: number; listRef?: React.
     setLoading(true);
     setHasMore(true);
     try {
-      let dbThreads;
-      // Server-side category filtering for inbox
-      if (activeLabel === "inbox" && activeCategory !== "All") {
-        dbThreads = await getThreadsForCategory(activeAccountId, activeCategory, PAGE_SIZE, 0);
-      } else {
-        const gmailLabelId = LABEL_MAP[activeLabel] ?? activeLabel;
-        dbThreads = await getThreadsForAccount(
+      // Smart folder query path
+      if (isSmartFolder && activeSmartFolder) {
+        const { sql, params } = getSmartFolderSearchQuery(
+          activeSmartFolder.query,
           activeAccountId,
-          gmailLabelId || undefined,
           PAGE_SIZE,
-          0,
         );
-      }
+        const db = await getDb();
+        const rows = await db.select<{
+          message_id: string;
+          account_id: string;
+          thread_id: string;
+          subject: string | null;
+          from_name: string | null;
+          from_address: string | null;
+          snippet: string | null;
+          date: number;
+        }[]>(sql, params);
 
-      const mapped = await mapDbThreads(dbThreads);
-      setThreads(mapped);
-      setHasMore(dbThreads.length === PAGE_SIZE);
+        // Deduplicate by thread_id, keeping the first occurrence
+        const seen = new Set<string>();
+        const uniqueRows = rows.filter((r) => {
+          if (seen.has(r.thread_id)) return false;
+          seen.add(r.thread_id);
+          return true;
+        });
+
+        const mapped: Thread[] = await Promise.all(
+          uniqueRows.map(async (r) => {
+            const labelIds = await getThreadLabelIds(r.account_id, r.thread_id);
+            return {
+              id: r.thread_id,
+              accountId: r.account_id,
+              subject: r.subject,
+              snippet: r.snippet,
+              lastMessageAt: r.date,
+              messageCount: 1,
+              isRead: false,
+              isStarred: false,
+              isPinned: false,
+              hasAttachments: false,
+              labelIds,
+              fromName: r.from_name,
+              fromAddress: r.from_address,
+            };
+          }),
+        );
+        setThreads(mapped);
+        setHasMore(false); // Smart folders load all at once
+      } else {
+        let dbThreads;
+        // Server-side category filtering for inbox
+        if (activeLabel === "inbox" && activeCategory !== "All") {
+          dbThreads = await getThreadsForCategory(activeAccountId, activeCategory, PAGE_SIZE, 0);
+        } else {
+          const gmailLabelId = LABEL_MAP[activeLabel] ?? activeLabel;
+          dbThreads = await getThreadsForAccount(
+            activeAccountId,
+            gmailLabelId || undefined,
+            PAGE_SIZE,
+            0,
+          );
+        }
+
+        const mapped = await mapDbThreads(dbThreads);
+        setThreads(mapped);
+        setHasMore(dbThreads.length === PAGE_SIZE);
+      }
     } catch (err) {
       console.error("Failed to load threads:", err);
     } finally {
       setLoading(false);
     }
-  }, [activeAccountId, activeLabel, activeCategory, setThreads, setLoading, mapDbThreads, clearSearch]);
+  }, [activeAccountId, activeLabel, activeCategory, isSmartFolder, activeSmartFolder, setThreads, setLoading, mapDbThreads, clearSearch]);
 
   const loadMore = useCallback(async () => {
     if (!activeAccountId || loadingMore || !hasMore) return;
@@ -399,12 +459,15 @@ export function EmailList({ width, listRef }: { width?: number; listRef?: React.
       {/* Header */}
       <div className="px-4 py-2 border-b border-border-primary flex items-center justify-between">
         <div>
-          <h2 className="text-sm font-semibold text-text-primary capitalize">
-            {activeLabel === "inbox" && inboxViewMode === "split" && activeCategory !== "All"
-              ? `Inbox — ${activeCategory}`
-              : LABEL_MAP[activeLabel] !== undefined
-                ? activeLabel
-                : userLabels.find((l) => l.id === activeLabel)?.name ?? activeLabel}
+          <h2 className="text-sm font-semibold text-text-primary capitalize flex items-center gap-1.5">
+            {isSmartFolder && <FolderSearch size={14} className="text-accent shrink-0" />}
+            {isSmartFolder
+              ? activeSmartFolder?.name ?? "Smart Folder"
+              : activeLabel === "inbox" && inboxViewMode === "split" && activeCategory !== "All"
+                ? `Inbox — ${activeCategory}`
+                : LABEL_MAP[activeLabel] !== undefined
+                  ? activeLabel
+                  : userLabels.find((l) => l.id === activeLabel)?.name ?? activeLabel}
           </h2>
           <span className="text-xs text-text-tertiary">
             {filteredThreads.length} conversation{filteredThreads.length !== 1 ? "s" : ""}
@@ -663,6 +726,9 @@ function EmptyStateForContext({
     case "all":
       return <EmptyState illustration={GenericEmptyIllustration} title="No emails yet" />;
     default:
+      if (activeLabel.startsWith("smart-folder:")) {
+        return <EmptyState icon={FolderSearch} title="No matching emails" subtitle="Try adjusting the smart folder query" />;
+      }
       return <EmptyState illustration={GenericEmptyIllustration} title="Nothing here" subtitle="No conversations with this label" />;
   }
 }
