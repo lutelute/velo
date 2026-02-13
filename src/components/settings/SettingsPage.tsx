@@ -24,6 +24,7 @@ import {
   MailMinus,
   Code,
   Check,
+  FolderSearch,
   type LucideIcon,
 } from "lucide-react";
 import { SignatureEditor } from "./SignatureEditor";
@@ -32,17 +33,19 @@ import { FilterEditor } from "./FilterEditor";
 import { LabelEditor } from "./LabelEditor";
 import { ContactEditor } from "./ContactEditor";
 import { SubscriptionManager } from "./SubscriptionManager";
+import { SmartFolderEditor } from "./SmartFolderEditor";
 import { SHORTCUTS, getDefaultKeyMap } from "@/constants/shortcuts";
 import { useShortcutStore } from "@/stores/shortcutStore";
 import { COLOR_THEMES } from "@/constants/themes";
 
-type SettingsTab = "general" | "composing" | "labels" | "filters" | "contacts" | "accounts" | "sync" | "shortcuts" | "ai" | "subscriptions" | "developer";
+type SettingsTab = "general" | "composing" | "labels" | "filters" | "smart-folders" | "contacts" | "accounts" | "sync" | "shortcuts" | "ai" | "subscriptions" | "developer";
 
 const tabs: { id: SettingsTab; label: string; icon: LucideIcon }[] = [
   { id: "general", label: "General", icon: Settings },
   { id: "composing", label: "Composing", icon: PenLine },
   { id: "labels", label: "Labels", icon: Tag },
   { id: "filters", label: "Filters", icon: Filter },
+  { id: "smart-folders", label: "Smart Folders", icon: FolderSearch },
   { id: "contacts", label: "Contacts", icon: Users },
   { id: "subscriptions", label: "Subscriptions", icon: MailMinus },
   { id: "accounts", label: "Accounts", icon: UserCircle },
@@ -646,6 +649,15 @@ export function SettingsPage() {
                     Filters automatically apply actions to new incoming emails during sync.
                   </p>
                   <FilterEditor />
+                </Section>
+              )}
+
+              {activeTab === "smart-folders" && (
+                <Section title="Smart Folders">
+                  <p className="text-xs text-text-tertiary mb-3">
+                    Smart folders are saved searches that automatically show matching emails. Use search operators like <code className="bg-bg-tertiary px-1 rounded">is:unread</code>, <code className="bg-bg-tertiary px-1 rounded">from:</code>, <code className="bg-bg-tertiary px-1 rounded">has:attachment</code>, <code className="bg-bg-tertiary px-1 rounded">after:</code>.
+                  </p>
+                  <SmartFolderEditor />
                 </Section>
               )}
 
