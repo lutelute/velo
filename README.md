@@ -49,7 +49,8 @@ Most email clients are slow, bloated, or send your data to someone else's server
 - Threaded conversations with collapsible messages
 - Full-text search with Gmail-style operators (`from:`, `to:`, `subject:`, `has:attachment`, `label:`, etc.)
 - Command palette (`/` or `Ctrl+K`) for quick actions
-- Drag-and-drop labels, multi-select, pin threads, context menus
+- Drag-and-drop labels, multi-select, pin threads, mute threads, context menus
+- Split inbox with category tabs (Primary, Updates, Promotions, Social, Newsletters)
 - Inline reply, contact sidebar with Gravatar
 
 ### Composer
@@ -57,6 +58,7 @@ Most email clients are slow, bloated, or send your data to someone else's server
 - TipTap v3 rich text editor (bold, italic, lists, code, links, images)
 - Undo send, schedule send, auto-save drafts
 - Multiple signatures, reusable templates with variables
+- Send-as email aliases with from-address selector
 - Drag-and-drop attachments with inline preview
 - Frequency-ranked contact autocomplete
 
@@ -67,6 +69,8 @@ Most email clients are slow, bloated, or send your data to someone else's server
 - AI + rule-based auto-categorization (Primary, Updates, Promotions, Social, Newsletters)
 - One-click unsubscribe (RFC 8058) and subscription manager
 - Newsletter bundling with delivery schedules
+- Smart folders / saved searches with dynamic query tokens
+- Quick steps -- custom action chains for batch thread processing
 - Follow-up reminders when you haven't received a reply
 
 ### AI
@@ -86,7 +90,7 @@ Google Calendar sync with month, week, and day views. Create events without leav
 ### UI & Design
 
 - Glassmorphism with animated gradient background
-- Dark / light / system theme
+- Dark / light / system theme with 8 accent color presets
 - Flexible reading pane (right, bottom, hidden), resizable panels
 - Configurable density and font scaling
 - Pop-out thread windows, custom titlebar, splash screen
@@ -96,6 +100,8 @@ Google Calendar sync with month, week, and day views. Create events without leav
 
 - OAuth PKCE -- no client secret, no backend servers
 - Remote image blocking with per-sender allowlist
+- Phishing link detection with 10 heuristic scoring rules
+- SPF/DKIM/DMARC authentication display with badges and warnings
 - DOMPurify + sandboxed iframe rendering
 - AES-256-GCM encrypted token storage
 
@@ -132,9 +138,9 @@ See [Development Guide](docs/development.md) for all commands, testing, and buil
 |--|--|
 | **Framework** | Tauri v2 (Rust) + React 19 + TypeScript |
 | **Styling** | Tailwind CSS v4 |
-| **State** | Zustand 5 (7 stores) |
+| **State** | Zustand 5 (8 stores) |
 | **Editor** | TipTap v3 |
-| **Database** | SQLite + FTS5 (24 tables) |
+| **Database** | SQLite + FTS5 (30 tables) |
 | **AI** | Claude, GPT, Gemini |
 | **Testing** | Vitest + Testing Library |
 

@@ -13,6 +13,11 @@ Velo is designed to be used entirely from the keyboard. All shortcuts are custom
 | `g` then `s` | Go to Starred |
 | `g` then `t` | Go to Sent |
 | `g` then `d` | Go to Drafts |
+| `g` then `p` | Go to Primary |
+| `g` then `u` | Go to Updates |
+| `g` then `o` | Go to Promotions |
+| `g` then `c` | Go to Social |
+| `g` then `n` | Go to Newsletters |
 
 ## Actions
 
@@ -25,6 +30,7 @@ Velo is designed to be used entirely from the keyboard. All shortcuts are custom
 | `e` | Archive |
 | `s` | Star / unstar |
 | `p` | Pin / unpin |
+| `m` | Mute / unmute thread |
 | `#` | Trash (permanent delete if already in trash) |
 | `!` | Spam / not spam |
 | `u` | Unsubscribe |

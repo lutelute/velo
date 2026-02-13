@@ -40,8 +40,8 @@ Tauri v2 desktop app: Rust backend + React 19 frontend communicating via Tauri I
 1. **Rust backend** (`src-tauri/`): System tray, minimize-to-tray (hide on close), splash screen, OAuth localhost server (port 17248, PKCE), single-instance enforcement, autostart support. Tauri commands: `start_oauth_server`, `close_splashscreen`, `set_tray_tooltip`, `open_devtools`. Plugins: sql (SQLite), notification, opener, log, dialog, fs, http, single-instance, autostart, deep-link (`mailto:` scheme), global-shortcut. Windows-specific: sets AUMID for proper notification identity.
 
 2. **Service layer** (`src/services/`): All business logic. Plain async functions (not classes, except `GmailClient`).
-   - `db/` — SQLite queries via `getDb()` singleton from `connection.ts`. Version-tracked migrations in `migrations.ts`. FTS5 full-text search on messages (trigram tokenizer). 22 service files covering accounts, messages, threads, labels, contacts, filters, templates, signatures, attachments, scheduled emails, image allowlist, search, settings, AI cache, bundle rules, calendar events, follow-up reminders, notification VIPs, and thread categories.
-   - `gmail/` — `GmailClient` class auto-refreshes tokens 5min before expiry, retries on 401. `tokenManager.ts` caches clients per account in a Map. `syncManager.ts` orchestrates sync (60s interval). `sync.ts` does initial sync (365 days, configurable via `sync_period_days` setting) and delta sync via Gmail History API; falls back to full sync if history expired (~30 days).
+   - `db/` — SQLite queries via `getDb()` singleton from `connection.ts`. Version-tracked migrations in `migrations.ts`. FTS5 full-text search on messages (trigram tokenizer). 27 service files covering accounts, messages, threads, labels, contacts, filters, templates, signatures, attachments, scheduled emails, image allowlist, search, settings, AI cache, bundle rules, calendar events, follow-up reminders, notification VIPs, thread categories, send-as aliases, smart folders, quick steps, link scan results, and phishing allowlist.
+   - `gmail/` — `GmailClient` class auto-refreshes tokens 5min before expiry, retries on 401. `tokenManager.ts` caches clients per account in a Map. `syncManager.ts` orchestrates sync (60s interval). `sync.ts` does initial sync (365 days, configurable via `sync_period_days` setting) and delta sync via Gmail History API; falls back to full sync if history expired (~30 days). `authParser.ts` parses SPF/DKIM/DMARC from `Authentication-Results` headers. `sendAs.ts` fetches send-as aliases from Gmail API.
    - `ai/` — `aiService.ts` provides thread summaries, smart replies, AI compose, text transform, and auto-categorization. `providerManager.ts` manages three providers (`providers/claudeProvider.ts`, `providers/openaiProvider.ts`, `providers/geminiProvider.ts`). `askInbox.ts` enables natural language inbox queries. `categorizationManager.ts` auto-sorts threads into Primary/Updates/Promotions/Social/Newsletters. `errors.ts` and `types.ts` define shared AI types. Results cached locally via `db/aiCache.ts`.
    - `google/` — `calendar.ts` handles Google Calendar API (list calendars, fetch events, create events, token refresh).
    - `composer/` — `draftAutoSave.ts` auto-saves drafts every 3 seconds (debounced). Watches composer state changes via Zustand subscribe.
@@ -55,18 +55,19 @@ Tauri v2 desktop app: Rust backend + React 19 frontend communicating via Tauri I
    - `contacts/` — `gravatar.ts` fetches Gravatar profile images for contacts.
    - `attachments/` — `cacheManager.ts` handles local attachment caching with size limits.
    - `unsubscribe/` — `unsubscribeManager.ts` handles one-click unsubscribe (RFC 8058 List-Unsubscribe-Post and mailto: fallback).
+   - `quickSteps/` — Custom action chain executor with 18 action types. `executor.ts` runs action sequences on threads. `defaults.ts` provides preset templates. `types.ts` defines action chain schema.
    - Root-level services: `badgeManager.ts` (taskbar badge count), `deepLinkHandler.ts` (`mailto:` protocol handling), `globalShortcut.ts` (system-wide compose shortcut).
 
-3. **UI layer** (`src/components/`, `src/stores/`): Seven Zustand stores (`uiStore`, `accountStore`, `threadStore`, `composerStore`, `labelStore`, `contextMenuStore`, `shortcutStore`) — simple synchronous state, no middleware. Components subscribe directly via hooks.
+3. **UI layer** (`src/components/`, `src/stores/`): Eight Zustand stores (`uiStore`, `accountStore`, `threadStore`, `composerStore`, `labelStore`, `contextMenuStore`, `shortcutStore`, `smartFolderStore`) — simple synchronous state, no middleware. Components subscribe directly via hooks.
 
 ### Component organization
 
 11 groups, ~55 component files:
 - `layout/` — Sidebar, EmailList, ReadingPane, TitleBar
-- `email/` — ThreadView, ThreadCard, MessageItem, EmailRenderer, ActionBar, AttachmentList, SnoozeDialog, ContactSidebar, FollowUpDialog, InlineAttachmentPreview, InlineReply, SmartReplySuggestions, ThreadSummary
-- `composer/` — Composer (TipTap v3 rich text editor), AddressInput, EditorToolbar, AttachmentPicker, ScheduleSendDialog, SignatureSelector, TemplatePicker, UndoSendToast, AiAssistPanel
+- `email/` — ThreadView, ThreadCard, MessageItem, EmailRenderer, ActionBar, AttachmentList, SnoozeDialog, ContactSidebar, FollowUpDialog, InlineAttachmentPreview, InlineReply, SmartReplySuggestions, ThreadSummary, AuthBadge, AuthWarningBanner, PhishingBanner, LinkConfirmDialog, CategoryTabs
+- `composer/` — Composer (TipTap v3 rich text editor), AddressInput, EditorToolbar, AttachmentPicker, ScheduleSendDialog, SignatureSelector, TemplatePicker, UndoSendToast, AiAssistPanel, FromSelector
 - `search/` — CommandPalette, SearchBar, ShortcutsHelp, AskInbox
-- `settings/` — SettingsPage, FilterEditor, LabelEditor, SignatureEditor, TemplateEditor, ContactEditor, SubscriptionManager
+- `settings/` — SettingsPage, FilterEditor, LabelEditor, SignatureEditor, TemplateEditor, ContactEditor, SubscriptionManager, QuickStepEditor, SmartFolderEditor
 - `accounts/` — AddAccount, AccountSwitcher, SetupClientId
 - `calendar/` — CalendarPage, CalendarReauthBanner, CalendarToolbar, DayView, WeekView, MonthView, EventCard, EventCreateModal
 - `labels/` — LabelForm
@@ -80,10 +81,10 @@ Thread pop-out windows via `ThreadWindow.tsx`. Entry point in `main.tsx` checks 
 ### Startup sequence (App.tsx)
 
 1. `runMigrations()`
-2. Restore persisted settings: theme, sidebar, contact sidebar, reading pane position, read filter, email list width, email density, default reply mode, mark-as-read behavior, send & archive, font scale
+2. Restore persisted settings: theme, color theme, sidebar, contact sidebar, reading pane position, read filter, email list width, email density, default reply mode, mark-as-read behavior, send & archive, font scale, inbox view mode, phishing detection
 3. Load custom keyboard shortcuts (`shortcutStore.loadKeyMap()`)
-4. `getAllAccounts()` → `initializeClients()`
-5. `startBackgroundSync()` (60s interval)
+4. `getAllAccounts()` → `initializeClients()` → `fetchSendAsAliases()` per account
+5. `startBackgroundSync()` (60s interval), `backfillUncategorizedThreads()`
 6. `startSnoozeChecker()` + `startScheduledSendChecker()` + `startFollowUpChecker()` + `startBundleChecker()` (60s intervals)
 7. `initNotifications()` (request OS permission)
 8. `initGlobalShortcut()` (system-wide compose shortcut)
@@ -107,6 +108,7 @@ Custom window events: `velo-sync-done`, `velo-toggle-command-palette`, `velo-tog
 | `e` | Archive |
 | `s` | Star/unstar |
 | `p` | Pin/unpin |
+| `m` | Mute/unmute thread |
 | `c` | Compose new email |
 | `r` | Reply |
 | `a` | Reply all |
@@ -125,6 +127,11 @@ Custom window events: `velo-sync-done`, `velo-toggle-command-palette`, `velo-tog
 | `g` then `s` | Go to Starred |
 | `g` then `t` | Go to Sent |
 | `g` then `d` | Go to Drafts |
+| `g` then `p` | Go to Primary |
+| `g` then `u` | Go to Updates |
+| `g` then `o` | Go to Promotions |
+| `g` then `c` | Go to Social |
+| `g` then `n` | Go to Newsletters |
 
 Multi-select: click to toggle, Shift+click for range. All keyboard actions work on multi-selected threads.
 
@@ -135,6 +142,8 @@ Tailwind CSS v4 — uses `@import "tailwindcss"`, `@theme {}` for custom propert
 **Semantic color tokens**: `bg-bg-primary/secondary/tertiary/hover/selected`, `text-text-primary/secondary/tertiary`, `border-border-primary/secondary`, `bg-accent/accent-hover/accent-light`, `bg-danger/warning/success`, `bg-sidebar-bg`, `text-sidebar-text`.
 
 **Glass effects**: `.glass-panel`, `.glass-modal`, `.glass-backdrop` utility classes with blur and shadow properties.
+
+**Color themes**: 8 accent color presets (Indigo, Rose, Emerald, Amber, Sky, Violet, Orange, Slate) defined in `src/constants/themes.ts`. Each has light & dark variants. Applied via CSS custom properties, independent of light/dark mode.
 
 **Background**: Animated gradient blobs (5 blobs with radial gradients, keyframe animations). Light mode uses blue→purple→pink→orange→cyan gradient; dark mode uses darker blues/purples.
 
@@ -148,9 +157,9 @@ Vitest + jsdom. Setup file: `src/test/setup.ts` (imports `@testing-library/jest-
 
 ## Database
 
-SQLite via Tauri SQL plugin. 6 migrations (version-tracked in `_migrations` table). Custom `splitStatements()` handles BEGIN...END blocks in triggers.
+SQLite via Tauri SQL plugin. 12 migrations (version-tracked in `_migrations` table). Custom `splitStatements()` handles BEGIN...END blocks in triggers.
 
-Key tables (24 total): `accounts`, `messages` (with FTS5 index `messages_fts`), `threads` (with `is_pinned`), `thread_labels`, `labels`, `contacts` (frequency-ranked for autocomplete, with `first_contacted_at`), `attachments` (with `cached_at`, `cache_size`), `filter_rules` (criteria/actions as JSON), `scheduled_emails` (status: pending/sent/failed), `templates` (with optional keyboard shortcut), `signatures`, `image_allowlist`, `settings` (key-value store), `ai_cache`, `thread_categories`, `calendar_events`, `follow_up_reminders`, `notification_vips`, `unsubscribe_actions`, `bundle_rules`, `bundled_threads`, `_migrations`.
+Key tables (30 total): `accounts`, `messages` (with FTS5 index `messages_fts`, `auth_results`), `threads` (with `is_pinned`, `is_muted`), `thread_labels`, `labels`, `contacts` (frequency-ranked for autocomplete, with `first_contacted_at`), `attachments` (with `cached_at`, `cache_size`), `filter_rules` (criteria/actions as JSON), `scheduled_emails` (status: pending/sent/failed), `templates` (with optional keyboard shortcut), `signatures`, `image_allowlist`, `settings` (key-value store), `ai_cache`, `thread_categories`, `calendar_events`, `follow_up_reminders`, `notification_vips`, `unsubscribe_actions`, `bundle_rules`, `bundled_threads`, `send_as_aliases`, `smart_folders`, `link_scan_results`, `phishing_allowlist`, `quick_steps`, `_migrations`.
 
 ## Key Gotchas
 
@@ -177,3 +186,10 @@ Key tables (24 total): `accounts`, `messages` (with FTS5 index `messages_fts`), 
 - **AI providers**: API keys stored in SQLite settings table. Provider selected per-feature in settings. Results cached in `ai_cache` table
 - **Deep links**: `mailto:` scheme registered via tauri-plugin-deep-link. Opens compose window with pre-filled recipient
 - **Autostart**: Uses `--hidden` flag to start minimized to tray
+- **Phishing detection**: 10 heuristic rules (IP URLs, homograph, suspicious TLDs, URL shorteners, display/href mismatch, suspicious paths, brand impersonation, dangerous protocols, free email impostor, subdomain spoofing). Sensitivity configurable (low/default/high). Results cached in `link_scan_results`
+- **Auth display**: SPF/DKIM/DMARC parsed from `Authentication-Results` header. Aggregate verdict: pass/fail/warning/unknown. Stored in `messages.auth_results` column
+- **Mute threads**: Sets `is_muted` flag, auto-archives. Muted threads suppressed from notifications during delta sync
+- **Send-as aliases**: Fetched from Gmail `/settings/sendAs` API on account init. `FromSelector` shown in composer when account has multiple aliases
+- **Smart folders**: Saved search queries with dynamic tokens (`__LAST_7_DAYS__`, `__LAST_30_DAYS__`, `__TODAY__`). Managed via `smartFolderStore`
+- **Quick steps**: Custom action chains with 18 action types. Executor in `services/quickSteps/executor.ts`
+- **Split inbox**: Category tabs (Primary/Updates/Promotions/Social/Newsletters) with backfill service for existing threads

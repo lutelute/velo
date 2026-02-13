@@ -5,7 +5,7 @@ Velo follows a **three-layer architecture** with clear separation of concerns.
 ```
 +--------------------------+
 |     React 19 + Zustand   |   UI Layer
-|  Components + 7 Stores   |   (TypeScript)
+|  Components + 8 Stores   |   (TypeScript)
 +--------------------------+
 |     Service Layer         |   Business Logic
 |  Gmail / DB / AI / Sync  |   (TypeScript)
@@ -42,6 +42,7 @@ Velo follows a **three-layer architecture** with clear separation of concerns.
 3. **State** -- Seven Zustand stores manage UI state. No middleware, no persistence needed -- ephemeral state rebuilds from SQLite on startup.
 4. **Rendering** -- Email HTML is sanitized with DOMPurify and rendered in sandboxed iframes. Remote images blocked by default.
 5. **Background services** -- Five interval checkers run continuously: sync, snooze, scheduled send, follow-up reminders, newsletter bundles (all 60s intervals).
+6. **Security** -- Phishing link detection scores message links with 10 heuristic rules. SPF/DKIM/DMARC authentication headers parsed and displayed as badges.
 
 ## Project Structure
 
@@ -52,12 +53,15 @@ velo/
 │   │   ├── layout/           # Sidebar, EmailList, ReadingPane, TitleBar
 │   │   ├── email/            # ThreadView, MessageItem, EmailRenderer,
 │   │   │                     # ContactSidebar, SmartReplySuggestions,
-│   │   │                     # InlineReply, ThreadSummary, FollowUpDialog
+│   │   │                     # InlineReply, ThreadSummary, FollowUpDialog,
+│   │   │                     # AuthBadge, AuthWarningBanner, PhishingBanner,
+│   │   │                     # LinkConfirmDialog, CategoryTabs
 │   │   ├── composer/         # Composer, AddressInput, EditorToolbar,
-│   │   │                     # AiAssistPanel, ScheduleSendDialog
+│   │   │                     # AiAssistPanel, ScheduleSendDialog, FromSelector
 │   │   ├── search/           # CommandPalette, SearchBar, ShortcutsHelp, AskInbox
 │   │   ├── settings/         # SettingsPage, FilterEditor, LabelEditor,
-│   │   │                     # SubscriptionManager, ContactEditor
+│   │   │                     # SubscriptionManager, ContactEditor,
+│   │   │                     # QuickStepEditor, SmartFolderEditor
 │   │   ├── accounts/         # AddAccount, AccountSwitcher, SetupClientId
 │   │   ├── calendar/         # CalendarPage, MonthView, WeekView, DayView,
 │   │   │                     # EventCard, EventCreateModal
@@ -65,7 +69,7 @@ velo/
 │   │   ├── dnd/              # DndProvider (drag threads → sidebar labels)
 │   │   └── ui/               # EmptyState, Skeleton, ContextMenu, illustrations/
 │   ├── services/             # Business logic layer
-│   │   ├── db/               # SQLite queries (22 files), migrations, FTS5
+│   │   ├── db/               # SQLite queries (27 files), migrations, FTS5
 │   │   ├── gmail/            # GmailClient, tokenManager, syncManager
 │   │   ├── ai/               # AI service, 3 providers, categorization, Ask Inbox
 │   │   ├── google/           # Google Calendar API
@@ -80,11 +84,12 @@ velo/
 │   │   ├── contacts/         # Gravatar integration
 │   │   ├── attachments/      # Attachment cache manager
 │   │   ├── unsubscribe/      # One-click unsubscribe (RFC 8058)
+│   │   ├── quickSteps/       # Quick step executor, types, defaults
 │   │   ├── badgeManager.ts   # Taskbar badge count
 │   │   ├── deepLinkHandler.ts # mailto: protocol handler
 │   │   └── globalShortcut.ts # System-wide compose shortcut
-│   ├── stores/               # Zustand stores (7): ui, account, thread,
-│   │                         # composer, label, contextMenu, shortcut
+│   ├── stores/               # Zustand stores (8): ui, account, thread,
+│   │                         # composer, label, contextMenu, shortcut, smartFolder
 │   ├── hooks/                # useKeyboardShortcuts, useClickOutside, useContextMenu
 │   ├── utils/                # crypto, date, emailBuilder, sanitize, imageBlocker,
 │   │                         # mailtoParser, fileUtils, templateVariables, noReply
@@ -122,7 +127,7 @@ All business logic lives in `src/services/` as plain async functions (except `Gm
 
 | Service | Description |
 |---------|-------------|
-| `db/` | SQLite queries (22 files), migrations, FTS5 search |
+| `db/` | SQLite queries (27 files), migrations, FTS5 search |
 | `gmail/` | Gmail client, token management, sync engine |
 | `ai/` | AI service with 3 providers, categorization, Ask Inbox |
 | `google/` | Google Calendar API |
@@ -137,12 +142,13 @@ All business logic lives in `src/services/` as plain async functions (except `Gm
 | `contacts/` | Gravatar integration |
 | `attachments/` | Local attachment caching |
 | `unsubscribe/` | One-click unsubscribe (RFC 8058) |
+| `quickSteps/` | Custom action chains with executor engine |
 
 **Root-level services:** `badgeManager.ts` (taskbar badge), `deepLinkHandler.ts` (mailto: protocol), `globalShortcut.ts` (system-wide compose)
 
 ## UI Layer
 
-Seven Zustand stores manage ephemeral UI state:
+Eight Zustand stores manage ephemeral UI state:
 
 | Store | Purpose |
 |-------|---------|
@@ -153,20 +159,21 @@ Seven Zustand stores manage ephemeral UI state:
 | `labelStore` | Label list, label operations |
 | `contextMenuStore` | Right-click context menu state |
 | `shortcutStore` | Custom keyboard shortcut bindings |
+| `smartFolderStore` | Saved searches with dynamic query tokens |
 
 ## Database
 
-SQLite via Tauri SQL plugin. 6 migrations, 24 tables total.
+SQLite via Tauri SQL plugin. 12 migrations, 30 tables total.
 
-Key tables: `accounts`, `messages` (with FTS5 index), `threads` (with `is_pinned`), `thread_labels`, `labels`, `contacts`, `attachments`, `filter_rules`, `scheduled_emails`, `templates`, `signatures`, `image_allowlist`, `settings`, `ai_cache`, `thread_categories`, `calendar_events`, `follow_up_reminders`, `notification_vips`, `unsubscribe_actions`, `bundle_rules`, `bundled_threads`.
+Key tables: `accounts`, `messages` (with FTS5 index, `auth_results`), `threads` (with `is_pinned`, `is_muted`), `thread_labels`, `labels`, `contacts`, `attachments`, `filter_rules`, `scheduled_emails`, `templates`, `signatures`, `image_allowlist`, `settings`, `ai_cache`, `thread_categories`, `calendar_events`, `follow_up_reminders`, `notification_vips`, `unsubscribe_actions`, `bundle_rules`, `bundled_threads`, `send_as_aliases`, `smart_folders`, `link_scan_results`, `phishing_allowlist`, `quick_steps`.
 
 ## Startup Sequence
 
 1. Run database migrations
 2. Restore persisted settings (theme, sidebar, density, font scale, reading pane, etc.)
 3. Load custom keyboard shortcuts
-4. Initialize Gmail clients for all accounts
-5. Start background sync (60s interval)
+4. Initialize Gmail clients for all accounts, sync send-as aliases
+5. Start background sync (60s interval), backfill uncategorized threads
 6. Start background checkers (snooze, scheduled send, follow-up, bundles)
 7. Initialize OS notifications
 8. Register global compose shortcut
