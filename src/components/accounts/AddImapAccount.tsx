@@ -281,7 +281,7 @@ export function AddImapAccount({
   const testImapConnection = async () => {
     setImapTest({ state: "testing" });
     try {
-      const result = await invoke<{ success: boolean; message: string }>(
+      const result = await invoke<string>(
         "imap_test_connection",
         {
           config: {
@@ -294,10 +294,7 @@ export function AddImapAccount({
           },
         },
       );
-      setImapTest({
-        state: result.success ? "success" : "error",
-        message: result.message,
-      });
+      setImapTest({ state: "success", message: result });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setImapTest({ state: "error", message });
