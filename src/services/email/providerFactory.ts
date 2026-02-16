@@ -1,8 +1,10 @@
 import type { EmailProvider } from "./types";
 import { GmailApiProvider } from "./gmailProvider";
 import { ImapSmtpProvider } from "./imapSmtpProvider";
+import { JmapProvider } from "./jmapProvider";
 import { getAccount } from "../db/accounts";
 import { getGmailClient } from "../gmail/tokenManager";
+import { createJmapClientForAccount } from "../jmap/clientFactory";
 
 const providers = new Map<string, EmailProvider>();
 
@@ -23,6 +25,9 @@ export async function getEmailProvider(
 
   if (account.provider === "imap") {
     provider = new ImapSmtpProvider(accountId);
+  } else if (account.provider === "jmap") {
+    const client = await createJmapClientForAccount(account);
+    provider = new JmapProvider(accountId, client);
   } else {
     // Default: gmail_api
     const client = await getGmailClient(accountId);

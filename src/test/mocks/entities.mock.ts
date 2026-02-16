@@ -112,6 +112,7 @@ export function createMockGmailAccount(
     oauth_client_id: null,
     oauth_client_secret: null,
     imap_username: null,
+    jmap_url: null,
     ...overrides,
   };
 }
@@ -145,6 +146,7 @@ export function createMockImapAccount(
     oauth_client_id: null,
     oauth_client_secret: null,
     imap_username: null,
+    jmap_url: null,
     ...overrides,
   };
 }
@@ -178,6 +180,7 @@ export function createMockDbAccount(
     oauth_client_id: null,
     oauth_client_secret: null,
     imap_username: null,
+    jmap_url: null,
     ...overrides,
   };
 }

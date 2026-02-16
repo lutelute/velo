@@ -619,6 +619,21 @@ const MIGRATIONS = [
       );
     `,
   },
+  {
+    version: 18,
+    description: "JMAP provider support",
+    sql: `
+      ALTER TABLE accounts ADD COLUMN jmap_url TEXT;
+
+      CREATE TABLE IF NOT EXISTS jmap_sync_state (
+        account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        object_type TEXT NOT NULL,
+        state TEXT NOT NULL,
+        updated_at INTEGER DEFAULT (unixepoch()),
+        PRIMARY KEY (account_id, object_type)
+      );
+    `,
+  },
 ];
 
 /**

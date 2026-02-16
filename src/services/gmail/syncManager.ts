@@ -4,6 +4,8 @@ import { getAccount, clearAccountHistoryId } from "../db/accounts";
 import { getSetting } from "../db/settings";
 import { imapInitialSync, imapDeltaSync } from "../imap/imapSync";
 import { ensureFreshToken } from "../oauth/oauthTokenManager";
+import { jmapInitialSync, jmapDeltaSync } from "../jmap/jmapSync";
+import { createJmapClientForAccount } from "../jmap/clientFactory";
 
 const SYNC_INTERVAL_MS = 15_000; // 15 seconds — delta syncs are lightweight (single API call when idle)
 
@@ -98,8 +100,53 @@ async function syncImapAccount(accountId: string): Promise<void> {
 }
 
 /**
+ * Run a sync for a single JMAP account (initial or delta).
+ */
+async function syncJmapAccount(accountId: string): Promise<void> {
+  const account = await getAccount(accountId);
+
+  if (!account) {
+    throw new Error("Account not found");
+  }
+
+  const client = await createJmapClientForAccount(account);
+  const syncPeriodStr = await getSetting("sync_period_days");
+  const syncDays = parseInt(syncPeriodStr ?? "365", 10) || 365;
+
+  if (account.history_id) {
+    // Delta sync
+    try {
+      await jmapDeltaSync(client, accountId);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "";
+      if (message === "JMAP_STATE_EXPIRED" || message === "JMAP_NO_STATE") {
+        // Fallback to full sync
+        await jmapInitialSync(client, accountId, syncDays, (progress) => {
+          statusCallback?.(accountId, "syncing", {
+            phase: progress.phase === "mailboxes" ? "labels" : progress.phase as "labels" | "threads" | "messages" | "done",
+            current: progress.current,
+            total: progress.total,
+          });
+        });
+      } else {
+        throw err;
+      }
+    }
+  } else {
+    // First time — full initial sync
+    await jmapInitialSync(client, accountId, syncDays, (progress) => {
+      statusCallback?.(accountId, "syncing", {
+        phase: progress.phase === "mailboxes" ? "labels" : progress.phase as "labels" | "threads" | "messages" | "done",
+        current: progress.current,
+        total: progress.total,
+      });
+    });
+  }
+}
+
+/**
  * Run a sync for a single account (initial or delta).
- * Routes to Gmail or IMAP sync based on account provider.
+ * Routes to Gmail, IMAP, or JMAP sync based on account provider.
  */
 async function syncAccountInternal(accountId: string): Promise<void> {
   try {
@@ -112,6 +159,8 @@ async function syncAccountInternal(accountId: string): Promise<void> {
 
     if (account.provider === "imap") {
       await syncImapAccount(accountId);
+    } else if (account.provider === "jmap") {
+      await syncJmapAccount(accountId);
     } else {
       await syncGmailAccount(accountId);
     }

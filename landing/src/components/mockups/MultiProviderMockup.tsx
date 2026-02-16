@@ -12,8 +12,9 @@ const PROVIDERS = [
   { name: 'Outlook', desc: 'IMAP/SMTP', icon: Mail },
   { name: 'Yahoo', desc: 'IMAP/SMTP', icon: Mail },
   { name: 'iCloud', desc: 'IMAP/SMTP', icon: Mail },
-  { name: 'Fastmail', desc: 'IMAP/SMTP', icon: Mail },
+  { name: 'Fastmail', desc: 'JMAP / IMAP', icon: Mail },
   { name: 'Any IMAP', desc: 'Custom server', icon: Globe },
+  { name: 'Any JMAP', desc: 'Modern protocol', icon: Globe },
 ]
 
 export function MultiProviderMockup() {

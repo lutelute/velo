@@ -27,6 +27,7 @@ export interface DbAccount {
   oauth_client_id: string | null;
   oauth_client_secret: string | null;
   imap_username: string | null;
+  jmap_url: string | null;
 }
 
 async function decryptAccountTokens(account: DbAccount): Promise<DbAccount> {
@@ -250,6 +251,39 @@ export async function insertOAuthImapAccount(account: {
       account.oauthClientId,
       encClientSecret,
       account.imapUsername || null,
+    ],
+  );
+}
+
+export async function insertJmapAccount(account: {
+  id: string;
+  email: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+  jmapUrl: string;
+  authMethod: string;
+  password?: string;
+  accessToken?: string;
+}): Promise<void> {
+  const db = await getDb();
+  const encPassword = account.password
+    ? await encryptValue(account.password)
+    : null;
+  const encAccessToken = account.accessToken
+    ? await encryptValue(account.accessToken)
+    : null;
+  await db.execute(
+    `INSERT INTO accounts (id, email, display_name, avatar_url, provider, auth_method, imap_password, access_token, jmap_url)
+     VALUES ($1, $2, $3, $4, 'jmap', $5, $6, $7, $8)`,
+    [
+      account.id,
+      account.email,
+      account.displayName,
+      account.avatarUrl,
+      account.authMethod,
+      encPassword,
+      encAccessToken,
+      account.jmapUrl,
     ],
   );
 }

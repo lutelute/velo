@@ -7,6 +7,7 @@ import { useAccountStore } from "@/stores/accountStore";
 import { Modal } from "@/components/ui/Modal";
 import { SetupClientId } from "./SetupClientId";
 import { AddImapAccount } from "./AddImapAccount";
+import { AddJmapAccount } from "./AddJmapAccount";
 import { getCurrentUnixTimestamp } from "@/utils/timestamp";
 
 interface AddAccountProps {
@@ -14,7 +15,7 @@ interface AddAccountProps {
   onSuccess: () => void;
 }
 
-type View = "select-provider" | "gmail" | "imap";
+type View = "select-provider" | "gmail" | "imap" | "jmap";
 
 export function AddAccount({ onClose, onSuccess }: AddAccountProps) {
   const [view, setView] = useState<View>("select-provider");
@@ -79,6 +80,16 @@ export function AddAccount({ onClose, onSuccess }: AddAccountProps) {
           setStatus("idle");
         }}
         onCancel={onClose}
+      />
+    );
+  }
+
+  if (view === "jmap") {
+    return (
+      <AddJmapAccount
+        onClose={onClose}
+        onSuccess={onSuccess}
+        onBack={() => setView("select-provider")}
       />
     );
   }
@@ -208,6 +219,23 @@ export function AddAccount({ onClose, onSuccess }: AddAccountProps) {
               </div>
               <div className="text-xs text-text-tertiary mt-0.5">
                 Connect any email provider with manual server configuration
+              </div>
+            </div>
+          </button>
+
+          <button
+            onClick={() => setView("jmap")}
+            className="w-full flex items-center gap-4 p-4 rounded-lg border border-border-primary bg-bg-secondary hover:bg-bg-hover transition-colors text-left group"
+          >
+            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-bg-tertiary flex items-center justify-center">
+              <Mail className="w-5 h-5 text-text-secondary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium text-text-primary group-hover:text-accent transition-colors">
+                JMAP
+              </div>
+              <div className="text-xs text-text-tertiary mt-0.5">
+                Modern JSON-based protocol (Fastmail, self-hosted servers)
               </div>
             </div>
           </button>

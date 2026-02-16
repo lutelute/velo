@@ -105,12 +105,12 @@ export const HELP_CATEGORIES: HelpCategory[] = [
         id: "add-account",
         icon: MailPlus,
         title: "Add your email account",
-        summary: "Connect a Gmail or IMAP/SMTP account to start using the app.",
+        summary: "Connect a Gmail, IMAP/SMTP, or JMAP account to start using the app.",
         description:
-          "Click the account switcher at the top of the sidebar to add an account. For Gmail, follow the OAuth sign-in flow using your own Google Cloud credentials. For other providers (Outlook, Yahoo, iCloud, Fastmail, etc.), choose 'Add IMAP Account' and enter your email and password — server settings are auto-discovered for popular providers. You can add multiple accounts of any type and switch between them instantly. Each account syncs independently with its own inbox, labels, and settings.",
+          "Click the account switcher at the top of the sidebar to add an account. For Gmail, follow the OAuth sign-in flow using your own Google Cloud credentials. For other providers (Outlook, Yahoo, iCloud, etc.), choose 'Add IMAP Account' and enter your email and password — server settings are auto-discovered for popular providers. For Fastmail or self-hosted JMAP servers, choose 'JMAP' — the modern JSON-based protocol with auto-discovery. You can add multiple accounts of any type and switch between them instantly. Each account syncs independently with its own inbox, labels, and settings.",
         tips: [
           { text: "The account switcher is always visible at the top of the sidebar." },
-          { text: "Gmail accounts use OAuth; IMAP accounts use password or app-password." },
+          { text: "Gmail uses OAuth; IMAP uses password/app-password; JMAP uses app password or bearer token." },
           { text: "Each account has its own labels, filters, and sync state." },
           { text: "Remove or re-authorize accounts in Settings > Accounts." },
         ],
@@ -122,13 +122,14 @@ export const HELP_CATEGORIES: HelpCategory[] = [
         title: "Initial sync",
         summary: "First sync downloads your email history.",
         description:
-          "When you add a new account, the app performs an initial sync that downloads your last year of email (configurable). This builds a local database for fast offline search and browsing. Depending on your inbox size, this can take a few minutes. You can use the app normally while the sync runs in the background — read, compose, and send without waiting. After the initial sync, the app switches to delta sync (every 60 seconds) to fetch only new changes. Gmail uses the History API for delta sync; IMAP uses UID-based tracking.",
+          "When you add a new account, the app performs an initial sync that downloads your last year of email (configurable). This builds a local database for fast offline search and browsing. Depending on your inbox size, this can take a few minutes. You can use the app normally while the sync runs in the background — read, compose, and send without waiting. After the initial sync, the app switches to delta sync (every 60 seconds) to fetch only new changes. Gmail uses the History API for delta sync; IMAP uses UID-based tracking; JMAP uses server state tokens with Email/changes.",
         tips: [
           { text: "Change the sync period (30 days to 1 year) in Settings > Sync." },
           { text: "The app is fully usable during the initial sync." },
           { text: "Delta sync runs every 60 seconds after the first sync completes." },
           { text: "Gmail: if sync history expires (~30 days offline), the app auto-falls back to a full sync." },
           { text: "IMAP: if folder UIDVALIDITY changes, the app resyncs that folder automatically." },
+          { text: "JMAP: uses server state tokens for efficient delta sync — only changed emails are fetched." },
         ],
         relatedSettingsTab: "sync",
       },
