@@ -113,6 +113,7 @@ describe("HelpPage categories cover all expected topics", () => {
     "notifications-contacts",
     "security",
     "calendar",
+    "tasks",
     "appearance",
     "accounts-system",
   ];
@@ -124,7 +125,7 @@ describe("HelpPage categories cover all expected topics", () => {
     }
   });
 
-  it("has exactly 13 categories", () => {
-    expect(HELP_CATEGORIES.length).toBe(13);
+  it("has exactly 14 categories", () => {
+    expect(HELP_CATEGORIES.length).toBe(14);
   });
 });
