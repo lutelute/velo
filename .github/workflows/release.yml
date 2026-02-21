@@ -7,6 +7,10 @@ on:
         description: "Release tag (e.g. velo-v0.4.3)"
         type: string
         required: false
+      release_id:
+        description: "Existing GitHub release ID to upload assets to"
+        type: string
+        required: false
   workflow_dispatch:
   release:
     types: [created]
@@ -72,7 +76,21 @@ jobs:
 
       - run: npm ci
 
-      - uses: tauri-apps/tauri-action@v0
+      - name: Build and upload to existing release
+        if: inputs.release_id
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          releaseId: ${{ inputs.release_id }}
+          updaterJsonKeepUniversal: true
+          args: ${{ matrix.args }}
+
+      - name: Build and create release
+        if: ${{ !inputs.release_id }}
+        uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
@@ -138,8 +156,24 @@ jobs:
             -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           security list-keychain -d user -s $KEYCHAIN_PATH
 
+      - name: Build and upload (signed + notarized)
+        if: steps.signing-check.outputs.has_signing == 'true' && inputs.release_id
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          releaseId: ${{ inputs.release_id }}
+          updaterJsonKeepUniversal: true
+          args: --target universal-apple-darwin
+
       - name: Build and release (signed + notarized)
-        if: steps.signing-check.outputs.has_signing == 'true'
+        if: steps.signing-check.outputs.has_signing == 'true' && !inputs.release_id
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -158,8 +192,20 @@ jobs:
           updaterJsonKeepUniversal: true
           args: --target universal-apple-darwin
 
+      - name: Build and upload (unsigned)
+        if: steps.signing-check.outputs.has_signing != 'true' && inputs.release_id
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          releaseId: ${{ inputs.release_id }}
+          updaterJsonKeepUniversal: true
+          args: --target universal-apple-darwin
+
       - name: Build and release (unsigned)
-        if: steps.signing-check.outputs.has_signing != 'true'
+        if: steps.signing-check.outputs.has_signing != 'true' && !inputs.release_id
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
