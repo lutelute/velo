@@ -79,4 +79,4 @@ jobs:
       - name: Upload SRPM to release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${{ inputs.tag_name }}" ~/rpmbuild/SRPMS/*.src.rpm --clobber
+        run: gh release upload "${{ inputs.tag_name }}" ~/rpmbuild/SRPMS/*.src.rpm --clobber --repo ${{ github.repository }}
