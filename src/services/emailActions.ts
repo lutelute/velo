@@ -4,6 +4,7 @@ import { getEmailProvider } from "@/services/email/providerFactory";
 import { enqueuePendingOperation } from "@/services/db/pendingOperations";
 import { classifyError } from "@/utils/networkErrors";
 import { getDb } from "@/services/db/connection";
+import { logEmailAction, getThreadMeta } from "@/services/ai/behaviorTracker";
 
 // ---------------------------------------------------------------------------
 // Action types
@@ -285,6 +286,9 @@ export async function executeEmailAction(
   accountId: string,
   action: EmailAction,
 ): Promise<ActionResult> {
+  // 0. Log behavior (non-blocking)
+  logActionBehavior(accountId, action);
+
   // 1. Optimistic UI update
   applyOptimisticUpdate(action);
 
@@ -329,6 +333,16 @@ export async function executeEmailAction(
     console.error(`Email action ${action.type} failed permanently:`, err);
     return { success: false, error: classified.message };
   }
+}
+
+// Log behavior (non-blocking, after action dispatch)
+function logActionBehavior(accountId: string, action: EmailAction): void {
+  const threadId = "threadId" in action ? action.threadId : "";
+  if (!threadId) return;
+
+  getThreadMeta(accountId, threadId)
+    .then((meta) => logEmailAction(accountId, threadId, action.type, meta))
+    .catch(() => {});
 }
 
 // ---------------------------------------------------------------------------

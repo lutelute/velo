@@ -22,6 +22,7 @@ import { AiTaskExtractDialog } from "@/components/tasks/AiTaskExtractDialog";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { MessageSkeleton } from "@/components/ui/Skeleton";
 import { RawMessageModal } from "./RawMessageModal";
+import { BehaviorSuggestionBanner } from "@/components/ai/BehaviorSuggestionBanner";
 
 interface ThreadViewProps {
   thread: Thread;
@@ -420,6 +421,19 @@ export function ThreadView({ thread }: ThreadViewProps) {
             accountId={activeAccountId}
             messages={messages}
           />
+        )}
+
+        {/* Behavior Suggestion */}
+        {activeAccountId && lastMessage && (
+          <div className="px-6 pt-2">
+            <BehaviorSuggestionBanner
+              accountId={activeAccountId}
+              threadId={thread.id}
+              fromAddress={lastMessage.from_address}
+              snippet={lastMessage.snippet ?? lastMessage.body_text ?? ""}
+              subject={thread.subject ?? ""}
+            />
+          </div>
         )}
 
         {/* Messages */}

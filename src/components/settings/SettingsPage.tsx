@@ -30,7 +30,6 @@ import {
   ExternalLink,
   Github,
   Scale,
-  Globe,
   Download,
   ChevronUp,
   ChevronDown,
@@ -129,6 +128,9 @@ export function SettingsPage() {
   const [aiTestResult, setAiTestResult] = useState<"success" | "fail" | null>(null);
   const [aiAutoDraftEnabled, setAiAutoDraftEnabled] = useState(true);
   const [aiWritingStyleEnabled, setAiWritingStyleEnabled] = useState(true);
+  const [aiTodoSuggestionsEnabled, setAiTodoSuggestionsEnabled] = useState(true);
+  const [aiWorkPriorityEnabled, setAiWorkPriorityEnabled] = useState(true);
+  const [aiBehaviorSuggestionsEnabled, setAiBehaviorSuggestionsEnabled] = useState(true);
   const [styleAnalyzing, setStyleAnalyzing] = useState(false);
   const [styleAnalyzeDone, setStyleAnalyzeDone] = useState(false);
   const [cacheMaxMb, setCacheMaxMb] = useState("500");
@@ -199,6 +201,12 @@ export function SettingsPage() {
       setAiAutoDraftEnabled(aiDraft !== "false");
       const aiStyle = await getSetting("ai_writing_style_enabled");
       setAiWritingStyleEnabled(aiStyle !== "false");
+      const aiTodo = await getSetting("ai_todo_suggestions_enabled");
+      setAiTodoSuggestionsEnabled(aiTodo !== "false");
+      const aiPriority = await getSetting("ai_work_priority_enabled");
+      setAiWorkPriorityEnabled(aiPriority !== "false");
+      const aiBehavior = await getSetting("ai_behavior_suggestions_enabled");
+      setAiBehaviorSuggestionsEnabled(aiBehavior !== "false");
 
       // Load auto-archive categories
       const autoArchive = await getSetting("auto_archive_categories");
@@ -512,7 +520,7 @@ export function SettingsPage() {
                   <Section title="Startup">
                     <ToggleRow
                       label="Launch at login"
-                      description="Start Velo automatically when you log in (minimized to tray)"
+                      description="ログイン時に Sora を自動起動（トレイに最小化）"
                       checked={autostartEnabled}
                       onToggle={handleAutostartToggle}
                     />
@@ -1281,6 +1289,39 @@ export function SettingsPage() {
                     />
                   </Section>
 
+                  <Section title="AI Suggestions">
+                    <ToggleRow
+                      label="Smart TODO suggestions"
+                      description="Extract action items from unread emails"
+                      checked={aiTodoSuggestionsEnabled}
+                      onToggle={async () => {
+                        const newVal = !aiTodoSuggestionsEnabled;
+                        setAiTodoSuggestionsEnabled(newVal);
+                        await setSetting("ai_todo_suggestions_enabled", newVal ? "true" : "false");
+                      }}
+                    />
+                    <ToggleRow
+                      label="Work priority suggestions"
+                      description="AI suggests optimal work order for your inbox"
+                      checked={aiWorkPriorityEnabled}
+                      onToggle={async () => {
+                        const newVal = !aiWorkPriorityEnabled;
+                        setAiWorkPriorityEnabled(newVal);
+                        await setSetting("ai_work_priority_enabled", newVal ? "true" : "false");
+                      }}
+                    />
+                    <ToggleRow
+                      label="Behavior-based suggestions"
+                      description="Suggest actions based on your past email patterns"
+                      checked={aiBehaviorSuggestionsEnabled}
+                      onToggle={async () => {
+                        const newVal = !aiBehaviorSuggestionsEnabled;
+                        setAiBehaviorSuggestionsEnabled(newVal);
+                        await setSetting("ai_behavior_suggestions_enabled", newVal ? "true" : "false");
+                      }}
+                    />
+                  </Section>
+
                   <Section title="Auto-Draft Replies">
                     <ToggleRow
                       label="Auto-draft replies"
@@ -1722,31 +1763,31 @@ function AboutTab() {
 
   return (
     <>
-      <Section title="Velo Mail">
+      <Section title="Sora">
         <div className="flex items-center gap-3 mb-2">
-          <img src={appIcon} alt="Velo" className="w-12 h-12 rounded-xl" />
+          <img src={appIcon} alt="Sora" className="w-12 h-12 rounded-xl" />
           <div>
-            <h3 className="text-base font-semibold text-text-primary">Velo</h3>
+            <h3 className="text-base font-semibold text-text-primary">Sora <span className="text-text-tertiary font-normal">空</span></h3>
             <p className="text-sm text-text-tertiary">
               {appVersion ? `Version ${appVersion}` : "Loading..."}
             </p>
           </div>
         </div>
         <p className="text-sm text-text-secondary leading-relaxed">
-          A fast, open-source desktop email client built with privacy in mind. Your emails stay on your machine — no cloud, no tracking.
+          空のように軽やかなデスクトップメールクライアント。メールはあなたのマシンに保存され、クラウドもトラッキングもありません。
         </p>
       </Section>
 
-      <Section title="Links">
+      <Section title="リンク">
         <div className="space-y-1">
           <button
-            onClick={() => openExternal("https://velomail.app")}
+            onClick={() => openExternal("https://github.com/lutelute/velo")}
             className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg bg-bg-secondary hover:bg-bg-hover transition-colors text-left"
           >
-            <Globe size={16} className="text-text-tertiary shrink-0" />
+            <Github size={16} className="text-text-tertiary shrink-0" />
             <div className="min-w-0 flex-1">
-              <span className="text-sm text-text-primary">Website</span>
-              <p className="text-xs text-text-tertiary">velomail.app</p>
+              <span className="text-sm text-text-primary">GitHub リポジトリ</span>
+              <p className="text-xs text-text-tertiary">lutelute/velo</p>
             </div>
             <ExternalLink size={14} className="text-text-tertiary shrink-0" />
           </button>
@@ -1757,43 +1798,32 @@ function AboutTab() {
           >
             <Github size={16} className="text-text-tertiary shrink-0" />
             <div className="min-w-0 flex-1">
-              <span className="text-sm text-text-primary">GitHub Repository</span>
+              <span className="text-sm text-text-primary">Original (Velo)</span>
               <p className="text-xs text-text-tertiary">avihaymenahem/velo</p>
-            </div>
-            <ExternalLink size={14} className="text-text-tertiary shrink-0" />
-          </button>
-
-          <button
-            onClick={() => openExternal("mailto:info@velomail.app")}
-            className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg bg-bg-secondary hover:bg-bg-hover transition-colors text-left"
-          >
-            <Mail size={16} className="text-text-tertiary shrink-0" />
-            <div className="min-w-0 flex-1">
-              <span className="text-sm text-text-primary">Contact</span>
-              <p className="text-xs text-text-tertiary">info@velomail.app</p>
             </div>
             <ExternalLink size={14} className="text-text-tertiary shrink-0" />
           </button>
         </div>
       </Section>
 
-      <Section title="License">
+      <Section title="ライセンス">
         <div className="px-4 py-3 bg-bg-secondary rounded-lg">
           <div className="flex items-center gap-2 mb-2">
             <Scale size={15} className="text-text-tertiary" />
             <span className="text-sm font-medium text-text-primary">Apache License 2.0</span>
           </div>
           <p className="text-xs text-text-secondary leading-relaxed mb-3">
-            Licensed under the Apache License, Version 2.0. You may obtain a copy of the License at{" "}
+            Apache License, Version 2.0 に基づきライセンスされています。ライセンスの全文は{" "}
             <button
               onClick={() => openExternal("https://www.apache.org/licenses/LICENSE-2.0")}
               className="text-accent hover:text-accent-hover transition-colors"
             >
               apache.org/licenses/LICENSE-2.0
             </button>
+            {" "}をご覧ください。
           </p>
           <p className="text-xs text-text-tertiary leading-relaxed">
-            Copyright 2025 Velo Mail. You may use, distribute, and modify this software under the terms of the Apache 2.0 license. This software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND.
+            Original: Copyright 2025 Velo Mail. Fork: Sora by lutelute. Apache 2.0 ライセンスの条件のもとで使用、配布、改変が可能です。
           </p>
         </div>
       </Section>

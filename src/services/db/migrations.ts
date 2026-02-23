@@ -775,6 +775,80 @@ const MIGRATIONS = [
     description: "Accept self-signed certificates for IMAP/SMTP",
     sql: `ALTER TABLE accounts ADD COLUMN accept_invalid_certs INTEGER DEFAULT 0;`,
   },
+  {
+    version: 24,
+    description: "AI suggestion tables: TODO, work priorities, action history, sender profiles",
+    sql: `
+      -- TODO suggestions extracted from unread emails
+      CREATE TABLE IF NOT EXISTS ai_todo_suggestions (
+        id TEXT PRIMARY KEY,
+        account_id TEXT NOT NULL,
+        thread_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT,
+        priority TEXT DEFAULT 'medium',
+        due_date INTEGER,
+        suggested_at INTEGER DEFAULT (unixepoch()),
+        status TEXT DEFAULT 'pending',
+        accepted_task_id TEXT
+      );
+      CREATE INDEX IF NOT EXISTS idx_ai_todo_account ON ai_todo_suggestions(account_id, status);
+
+      -- Work priority rankings
+      CREATE TABLE IF NOT EXISTS ai_work_priorities (
+        id TEXT PRIMARY KEY,
+        account_id TEXT NOT NULL,
+        thread_id TEXT NOT NULL,
+        rank INTEGER NOT NULL,
+        reason TEXT,
+        suggested_action TEXT,
+        urgency TEXT DEFAULT 'normal',
+        estimated_minutes INTEGER,
+        generated_at INTEGER DEFAULT (unixepoch()),
+        is_completed INTEGER DEFAULT 0
+      );
+      CREATE INDEX IF NOT EXISTS idx_ai_work_prio_account ON ai_work_priorities(account_id, is_completed);
+
+      -- Email action history log
+      CREATE TABLE IF NOT EXISTS email_action_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        account_id TEXT NOT NULL,
+        thread_id TEXT NOT NULL,
+        action_type TEXT NOT NULL,
+        from_address TEXT,
+        from_domain TEXT,
+        subject_keywords TEXT,
+        thread_category TEXT,
+        response_time_seconds INTEGER,
+        performed_at INTEGER DEFAULT (unixepoch())
+      );
+      CREATE INDEX IF NOT EXISTS idx_action_history_account ON email_action_history(account_id, performed_at);
+      CREATE INDEX IF NOT EXISTS idx_action_history_domain ON email_action_history(account_id, from_domain);
+
+      -- Sender behavior profiles
+      CREATE TABLE IF NOT EXISTS sender_behavior_profiles (
+        id TEXT PRIMARY KEY,
+        account_id TEXT NOT NULL,
+        from_domain TEXT NOT NULL,
+        from_address TEXT,
+        total_received INTEGER DEFAULT 0,
+        total_replied INTEGER DEFAULT 0,
+        total_archived INTEGER DEFAULT 0,
+        total_trashed INTEGER DEFAULT 0,
+        avg_response_time_seconds INTEGER,
+        most_common_action TEXT,
+        last_updated INTEGER DEFAULT (unixepoch()),
+        UNIQUE(account_id, from_domain, from_address)
+      );
+      CREATE INDEX IF NOT EXISTS idx_sender_profile_account ON sender_behavior_profiles(account_id, from_domain);
+
+      -- Default settings for AI suggestions
+      INSERT OR IGNORE INTO settings (key, value) VALUES
+        ('ai_todo_suggestions_enabled', 'true'),
+        ('ai_work_priority_enabled', 'true'),
+        ('ai_behavior_suggestions_enabled', 'true');
+    `,
+  },
 ];
 
 /**
