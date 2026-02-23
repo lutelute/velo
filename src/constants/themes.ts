@@ -179,7 +179,7 @@ export const COLOR_THEMES: ColorTheme[] = [
   },
 ];
 
-export const DEFAULT_COLOR_THEME: ColorThemeId = "indigo";
+export const DEFAULT_COLOR_THEME: ColorThemeId = "sky";
 
 export function getThemeById(id: string): ColorTheme {
   return (

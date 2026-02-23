@@ -1,8 +1,8 @@
 [package]
-name = "velo"
+name = "sora"
 version = "0.4.16" # x-release-please-version
-description = "Email at the speed of thought"
-authors = ["Avihay"]
+description = "空のように軽やかなメールクライアント"
+authors = ["lutelute"]
 license = "Apache-2.0"
 repository = ""
 edition = "2021"

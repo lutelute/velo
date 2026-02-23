@@ -5,7 +5,7 @@
   --color-bg-secondary: rgba(245, 245, 244, 0.88);
   --color-bg-tertiary: rgba(231, 229, 228, 0.88);
   --color-bg-hover: rgba(231, 229, 228, 0.65);
-  --color-bg-selected: rgba(224, 231, 255, 0.75);
+  --color-bg-selected: rgba(224, 242, 254, 0.75);
 
   --color-text-primary: #1c1917;
   --color-text-secondary: #57534e;
@@ -14,9 +14,9 @@
   --color-border-primary: rgba(0, 0, 0, 0.08);
   --color-border-secondary: rgba(0, 0, 0, 0.04);
 
-  --color-accent: #4f46e5;
-  --color-accent-hover: #4338ca;
-  --color-accent-light: #e0e7ff;
+  --color-accent: #0284c7;
+  --color-accent-hover: #0369a1;
+  --color-accent-light: #e0f2fe;
 
   --color-danger: #dc2626;
   --color-warning: #d97706;
@@ -25,7 +25,7 @@
   --color-sidebar-bg: rgba(245, 245, 244, 0.95);
   --color-sidebar-text: #1c1917;
   --color-sidebar-hover: rgba(231, 229, 228, 0.8);
-  --color-sidebar-active: #4f46e5;
+  --color-sidebar-active: #0284c7;
 
   --glass-blur: 20px;
   --glass-blur-heavy: 24px;
@@ -55,9 +55,9 @@
   --color-border-primary: rgba(255, 255, 255, 0.1);
   --color-border-secondary: rgba(255, 255, 255, 0.06);
 
-  --color-accent: #818cf8;
-  --color-accent-hover: #6366f1;
-  --color-accent-light: #312e81;
+  --color-accent: #38bdf8;
+  --color-accent-hover: #0ea5e9;
+  --color-accent-light: #0c4a6e;
 
   --color-sidebar-bg: rgba(15, 23, 42, 0.88);
   --color-sidebar-text: #e2e8f0;
@@ -88,7 +88,7 @@ body {
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
     Arial, sans-serif;
-  background: linear-gradient(135deg, #f5f0eb 0%, #ede4f5 30%, #fce7f3 60%, #fef3e2 80%, #e8eff8 100%);
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 30%, #bae6fd 55%, #e0f2fe 75%, #f0f9ff 100%);
   background-attachment: fixed;
   color: var(--color-text-primary);
   -webkit-font-smoothing: antialiased;
@@ -97,7 +97,7 @@ body {
 }
 
 .dark body {
-  background: linear-gradient(135deg, #0c1222 0%, #151030 35%, #1a0a2e 65%, #0f172a 100%);
+  background: linear-gradient(135deg, #0c1222 0%, #0c2d4a 35%, #0a3a5e 65%, #0f172a 100%);
   background-attachment: fixed;
 }
 
@@ -126,7 +126,7 @@ body {
 .animated-bg .blob:nth-child(1) {
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, #c7d2fe 0%, #a5b4fc 50%, transparent 70%);
+  background: radial-gradient(circle, #bae6fd 0%, #7dd3fc 50%, transparent 70%);
   top: -10%;
   left: -5%;
   animation-duration: 22s;
@@ -135,7 +135,7 @@ body {
 .animated-bg .blob:nth-child(2) {
   width: 450px;
   height: 450px;
-  background: radial-gradient(circle, #ddd6fe 0%, #c4b5fd 50%, transparent 70%);
+  background: radial-gradient(circle, #a5f3fc 0%, #67e8f9 50%, transparent 70%);
   top: 30%;
   right: -10%;
   animation-duration: 18s;
@@ -145,7 +145,7 @@ body {
 .animated-bg .blob:nth-child(3) {
   width: 400px;
   height: 400px;
-  background: radial-gradient(circle, #fecdd3 0%, #fda4af 50%, transparent 70%);
+  background: radial-gradient(circle, #e0f2fe 0%, #38bdf8 50%, transparent 70%);
   bottom: -5%;
   left: 30%;
   animation-duration: 25s;
@@ -155,7 +155,7 @@ body {
 .animated-bg .blob:nth-child(4) {
   width: 350px;
   height: 350px;
-  background: radial-gradient(circle, #d9c8ae 0%, #c4a882 50%, transparent 70%);
+  background: radial-gradient(circle, #cffafe 0%, #a5f3fc 50%, transparent 70%);
   bottom: 20%;
   left: -8%;
   animation-duration: 20s;
@@ -165,7 +165,7 @@ body {
 .animated-bg .blob:nth-child(5) {
   width: 300px;
   height: 300px;
-  background: radial-gradient(circle, #fde68a 0%, #fbbf24 50%, transparent 70%);
+  background: radial-gradient(circle, #dbeafe 0%, #93c5fd 50%, transparent 70%);
   top: 10%;
   left: 50%;
   animation-duration: 24s;

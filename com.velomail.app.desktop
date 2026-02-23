@@ -1,9 +1,9 @@
 [Desktop Entry]
-Name=Velo
-Comment=Fast, beautiful desktop email client
-Exec=velo
-Icon=com.velomail.app
+Name=Sora
+Comment=空のように軽やかなデスクトップメールクライアント
+Exec=sora
+Icon=dev.lutelute.sora
 Type=Application
 Categories=Network;Email;
-StartupWMClass=Velo
+StartupWMClass=Sora
 StartupNotify=true

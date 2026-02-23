@@ -62,11 +62,11 @@ pub async fn start_oauth_server(port: u16, state: String) -> Result<OAuthResult,
     // Send a success response to the browser
     let html = r#"<!DOCTYPE html>
 <html>
-<head><title>Velo</title></head>
+<head><title>Sora</title></head>
 <body style="font-family: -apple-system, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #0f172a; color: #e2e8f0;">
 <div style="text-align: center;">
-<h1 style="margin-bottom: 8px;">Account Connected!</h1>
-<p style="opacity: 0.7;">You can close this tab and return to Velo.</p>
+<h1 style="margin-bottom: 8px;">アカウント接続完了</h1>
+<p style="opacity: 0.7;">このタブを閉じて Sora に戻ってください。</p>
 </div>
 </body>
 </html>"#;
